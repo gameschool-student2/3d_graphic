@@ -1,3 +1,8 @@
+cbuffer drawerV : register(b0)
+{
+    float drawConst[32];
+}
+
 cbuffer global : register(b5)
 {
     float4 gConst[32];
@@ -46,10 +51,22 @@ float3 rotY(float3 pos, float a)
 VS_OUTPUT VS(uint vID : SV_VertexID)
 {
     VS_OUTPUT output = (VS_OUTPUT)0;
+
+    uint n = drawConst[0];
+    uint instanceID = vID / 6;
+
+    float row = instanceID % n;
+    float col = instanceID / n;
+
     float2 quad[6] = { -1, -1, 1, -1, -1, 1, 1, -1, 1, 1, -1, 1 };
-    float2 p = quad[vID];
-    float4 pos = float4(quad[vID], 0, 1);
+    float2 p = quad[vID % 6];
+
+    float4 pos = float4(p, 0, 1);
+    pos.y += (col - (n - n % 2 + 1) / 2) * 2;
+    pos.x += (row - (n - n % 2 + 1) / 2) * 2;
+
     output.pos = mul(pos, mul(view[0], proj[0]));
     output.uv = float2(1, -1) * p / 2. + .5;
+
     return output;
 }
