@@ -62,8 +62,11 @@ VS_OUTPUT VS(uint vID : SV_VertexID)
     float2 p = quad[vID % 6];
 
     float4 pos = float4(p, 0, 1);
-    pos.y += (col - (n - n % 2 + 1) / 2) * 2;
-    pos.x += (row - (n - n % 2 + 1) / 2) * 2;
+    pos.y += col * 2;
+    pos.x += row * 2;
+
+    pos.x -= (float)n / 2;
+    pos.y -= (float)n / 2;
 
     output.pos = mul(pos, mul(view[0], proj[0]));
     output.uv = float2(1, -1) * p / 2. + .5;
