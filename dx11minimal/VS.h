@@ -53,13 +53,10 @@ float3 ball(float2 p)
     float radius = 10;
     float n = (float)drawConst[0];
 
-    p.x = (p.x / n) * 3.141592653589793 / 2;
+    p.x = (p.x / n) * 3.141592653589793;
     p.y = (p.y / n) * 3.141592653589793;
 
-
-    float3 pos = float3(cos(p.x) * cos(p.y) * radius, sin(p.y) * radius, sin(p.x) * cos(p.y) * radius);
-
-    //pos = rotY(pos, time.x * 0.05);
+    float3 pos = float3(cos(p.x) * radius, sin(p.y) * radius, sin(p.x) * radius);
 
     return pos;
 }
@@ -82,8 +79,6 @@ VS_OUTPUT VS(uint vID : SV_VertexID)
     pos.x += row * 2;
 
     pos.xyz = ball(pos);
-
-    //pos.xy -= (float)n - 1;
 
     output.pos = mul(pos, mul(view[0], proj[0]));
     output.uv = float2(1, -1) * p / 2. + .5;
