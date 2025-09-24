@@ -48,18 +48,14 @@ float3 rotY(float3 pos, float a)
     return pos;
 }
 
-float3 ball(float2 p)
+float3 cylinder(float2 p)
 {
-    float radius = 10;
+    float radius = 5;
     float n = (float)drawConst[0];
 
-    p.x = (p.x / n) * 3.141592653589793 / 2;
-    p.y = (p.y / n) * 3.141592653589793;
+    p.x = (p.x / n) * 3.141592653589793;
 
-
-    float3 pos = float3(cos(p.x) * cos(p.y) * radius, sin(p.y) * radius, sin(p.x) * cos(p.y) * radius);
-
-    //pos = rotY(pos, time.x * 0.05);
+    float3 pos = float3(cos(p.x) * radius, p.y, sin(p.x) * radius);
 
     return pos;
 }
@@ -81,9 +77,9 @@ VS_OUTPUT VS(uint vID : SV_VertexID)
     pos.y += col * 2;
     pos.x += row * 2;
 
-    pos.xyz = ball(pos);
+    pos.xyz = cylinder(pos);
 
-    //pos.xy -= (float)n - 1;
+    pos.y -= (float)n - 1;
 
     output.pos = mul(pos, mul(view[0], proj[0]));
     output.uv = float2(1, -1) * p / 2. + .5;

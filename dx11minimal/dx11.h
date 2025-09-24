@@ -951,7 +951,7 @@ void mainLoop()
 
 	Camera::Camera();
 
-	int n = 8;
+	int n = 10;
 
 	ConstBuf::drawerV[0] = n;
 	Draw::NullDrawer(n * n, 1);
