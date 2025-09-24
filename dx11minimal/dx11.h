@@ -940,7 +940,7 @@ void mainLoop()
 	Blend::Blending(Blend::blendmode::alpha, Blend::blendop::add);
 
 	Textures::RenderTarget(0, 0);
-	Draw::Clear({ 0.4, 0.4, 0.4, 0 });
+	Draw::Clear({ 0, 0, 1, 0 });
 	Draw::ClearDepth();
 	Depth::Depth(Depth::depthmode::on);
 	Rasterizer::Cull(Rasterizer::cullmode::wireframe);
@@ -951,7 +951,7 @@ void mainLoop()
 
 	Camera::Camera();
 
-	int n = 4;
+	int n = 8;
 
 	ConstBuf::drawerV[0] = n;
 	Draw::NullDrawer(n * n, 1);
