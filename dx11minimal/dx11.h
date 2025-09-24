@@ -917,7 +917,7 @@ namespace Camera
 	{
 		float t = timer::frameBeginTime*.001;
 		float angle = 70;
-		float a = 15;
+		float a = 20;
 		XMVECTOR Eye = XMVectorSet(sin(t)*a, 0, cos(t)*a, 0.0f);
 		XMVECTOR At = XMVectorSet(0, 0, 0, 0.0f);
 		XMVECTOR Up = XMVectorSet(0, 1, 0, 0.0f);
