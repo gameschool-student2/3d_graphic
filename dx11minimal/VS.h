@@ -50,7 +50,7 @@ float3 rotY(float3 pos, float a)
 
 float3 ball(float2 p)
 {
-    float radius = 5;
+    float radius = 10;
     float n = (float)drawConst[0];
 
     p.x = (p.x / n) * 3.141592653589793;
