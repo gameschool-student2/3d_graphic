@@ -77,7 +77,7 @@ VS_OUTPUT VS(uint vID : SV_VertexID)
     pos.y += col * 2;
     pos.x += row * 2;
 
-    pos.xyz = cylinder(pos);
+    pos.xyz = cylinder(pos.xy);
     pos.y -= (float)n - 1;
 
     output.pos = mul(pos, mul(view[0], proj[0]));
