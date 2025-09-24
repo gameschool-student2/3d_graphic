@@ -54,7 +54,7 @@ float3 ball(float2 p)
     float n = (float)drawConst[0];
 
     p.x = (p.x / n) * 3.141592653589793;
-    p.y = (p.y / n) * 3.141592653589793;
+    p.y = (p.y / n) * 3.141592653589793 / 2;
 
     float3 pos = float3(cos(p.x) * cos(p.y) * radius, sin(p.y) * radius, sin(p.x) * cos(p.y) * radius);
 
@@ -77,6 +77,7 @@ VS_OUTPUT VS(uint vID : SV_VertexID)
     float4 pos = float4(p, 0, 1);
     pos.y += col * 2;
     pos.x += row * 2;
+    pos.xy -= (float)n - 1;
 
     pos.xyz = ball(pos.xy);
 
