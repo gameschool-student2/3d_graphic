@@ -48,15 +48,54 @@ float3 rotY(float3 pos, float a)
     return pos;
 }
 
-float3 ball(float2 p)
+float3 calculatePositionOnCurve(float u, float p, float q, float radius) {
+
+    const float cu = cos(u);
+    const float su = sin(u);
+    const float quOverP = q / p * u;
+    const float cs = cos(quOverP);
+
+    float3 position;
+    position.x = radius * (2 + cs) * 0.5 * cu;
+    position.y = radius * (2 + cs) * su * 0.5;
+    position.z = radius * sin(quOverP) * 0.5;
+
+    return position;
+}
+
+float3 torus_knot(float2 p)
 {
-    float radius = 10;
+    float r = 5;
+    float r2 = 10;
+    float tube = 2;
     float n = (float)drawConst[0];
 
-    p.x = (p.x / n) * 3.141592653589793;
-    p.y = (p.y / n) * 3.141592653589793 / 2;
+    p.x = (p.x / n) * 3.1415926536;
+    p.y = (p.y / n) * 3.1415926536 * 2;
 
-    float3 pos = float3(cos(p.x) * cos(p.y) * radius, sin(p.y) * radius, sin(p.x) * cos(p.y) * radius);
+
+    //float4 pos = float4(p.x, p.y, 0, 1);
+    float3 pos = float3(0, 0, 0);
+
+    float3 p1 = calculatePositionOnCurve(-p.y, 2, 3, r2);
+    float3 p2 = calculatePositionOnCurve(-p.y + 0.01, 2, 3, r2);
+
+    float3 t = p2 - p1;
+    float3 norm = p2 + p1;
+    float3 b = cross(t, norm);
+    norm = cross(b, t);
+
+    b = normalize(b);
+    norm = normalize(norm);
+
+    float cx = tube * cos(p.x);
+    float cy = tube * sin(p.x);
+
+    pos.x = p1.x + (cx * norm.x + cy * b.x);
+    pos.y = p1.y + (cx * norm.y + cy * b.y);
+    pos.z = p1.z + (cx * norm.z + cy * b.z);
+
+    //pos = rotY(pos, time.x * 0.05);
 
     return pos;
 }
@@ -79,7 +118,7 @@ VS_OUTPUT VS(uint vID : SV_VertexID)
     pos.x += row * 2;
     pos.xy -= (float)n - 1;
 
-    pos.xyz = ball(pos.xy);
+    pos.xyz = torus_knot(pos.xy);
 
     output.pos = mul(pos, mul(view[0], proj[0]));
     output.uv = float2(1, -1) * p / 2. + .5;
