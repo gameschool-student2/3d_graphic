@@ -937,7 +937,7 @@ void mainLoop()
 	frameConst();
 
 	InputAssembler::IA(InputAssembler::topology::triList);
-	Blend::Blending(Blend::blendmode::alpha, Blend::blendop::add);
+	Blend::Blending(Blend::blendmode::off, Blend::blendop::add);
 
 	Textures::RenderTarget(0, 0);
 	Draw::Clear({ 0, 0, 1, 0 });
