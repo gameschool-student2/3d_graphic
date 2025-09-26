@@ -943,7 +943,7 @@ void mainLoop()
 	Draw::Clear({ 0, 0, 1, 0 });
 	Draw::ClearDepth();
 	Depth::Depth(Depth::depthmode::on);
-	Rasterizer::Cull(Rasterizer::cullmode::back);
+	Rasterizer::Cull(Rasterizer::cullmode::off);
 	Shaders::vShader(0);
 	Shaders::pShader(0);
 	ConstBuf::ConstToVertex(4);
