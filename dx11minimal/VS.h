@@ -85,7 +85,7 @@ VS_OUTPUT VS(uint vID : SV_VertexID)
 
     float3 t = normalize(pos1 - pos0);
     float3 b = normalize(pos2 - pos0);
-    float3 h = cross(t, b);
+    float3 h = normalize(cross(t, b));
 
     output.pos = mul(float4(pos0.xyz, 1), mul(view[0], proj[0]));
     output.vpos = mul(output.pos, view[0]);
