@@ -46,11 +46,11 @@ float4 PS(VS_OUTPUT input) : SV_Target
     float3 viewDir = input.wpos.xyz - eye;
 
     float3 diffuse = saturate(dot(lightDir, input.vnorm));
-    float3 color = float3(0.15, 0.15, 0.1);
 
-    float3 reflectDir = normalize(reflect(viewDir, input.vnorm));
-    float spec = pow(max(dot(input.vpos.xyz, reflectDir), 0), 32);
-    float3 specular = specularPower * spec * color;
+    float3 reflectDir = normalize(reflect(-lightDir, input.vnorm));
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+    float3 specular = specularPower * spec;
 
+    //return saturate(float4(reflectDir, 1));
     return saturate(float4(ambientColor.xyz + diffuse + specular, 1));
 }
