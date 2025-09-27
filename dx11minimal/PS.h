@@ -54,5 +54,5 @@ float4 PS(VS_OUTPUT input) : SV_Target
     float3 specular = specularPower * spec;
 
     //return saturate(float4(reflectDir, 1));
-    return saturate(float4(ambientColor.xyz + diffuse + specular, 1));
+    return saturate(float4(ambientColor.xyz + diffuse, 1));
 }
