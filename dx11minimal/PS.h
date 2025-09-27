@@ -32,8 +32,13 @@ struct VS_OUTPUT
     float4 pos : SV_POSITION;
     float4 vpos : POSITION0;
     float4 wpos : POSITION1;
-    float4 vnorm : NORMAL1;
+    float4 normal : NORMAL1;
+    float4 tangent : NORMAL2;
+    float4 binormal : NORMAL3;
     float2 uv : TEXCOORD0;
+    float2 metallic : TEXCOORD1;
+    float4 albedo : TEXCOORD2;
+    float2 roughness : TEXCOORD3;
 };
 
 float4 PS(VS_OUTPUT input) : SV_Target
