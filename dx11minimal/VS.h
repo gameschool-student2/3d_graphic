@@ -73,8 +73,6 @@ float3 torus_knot(float2 p)
     p.x = (p.x / n) * 3.1415926536;
     p.y = (p.y / n) * 3.1415926536 * 2;
 
-
-    //float4 pos = float4(p.x, p.y, 0, 1);
     float3 pos = float3(0, 0, 0);
 
     float3 p1 = calculatePositionOnCurve(-p.y, 2, 3, r2);
@@ -94,8 +92,6 @@ float3 torus_knot(float2 p)
     pos.x = p1.x + (cx * norm.x + cy * b.x);
     pos.y = p1.y + (cx * norm.y + cy * b.y);
     pos.z = p1.z + (cx * norm.z + cy * b.z);
-
-    //pos = rotY(pos, time.x * 0.05);
 
     return pos;
 }
