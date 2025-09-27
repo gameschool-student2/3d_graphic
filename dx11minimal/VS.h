@@ -51,13 +51,13 @@ float3 rotY(float3 pos, float a)
 float3 torus(float2 p)
 {
     float outerRadius = 10;
-    float innerRadius = 2;
+    float innerRadius = 3;
     float n = (float)drawConst[0];
 
     p.x = (p.x / n) * 3.141592653589793;
     p.y = (p.y / n) * 3.141592653589793;
 
-    float3 pos = float3(cos(p.x) * outerRadius * cos(p.y) * innerRadius, sin(p.y), sin(p.x) * outerRadius * cos(p.y) * innerRadius);
+    float3 pos = float3((outerRadius + innerRadius * cos(p.y)) * cos(p.x), (outerRadius + innerRadius * cos(p.y)) * sin(p.x), innerRadius * sin(p.y));
 
     return pos;
 }
