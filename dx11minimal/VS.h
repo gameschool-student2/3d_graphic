@@ -53,15 +53,6 @@ float3 rotY(float3 pos, float a)
     return pos;
 }
 
-float length(float3 c)
-{
-    float x = c.x;
-    float y = c.y;
-    float z = c.z;
-    float l = sqrt(x * x + y * y + z * z);
-    return l;
-}
-
 float3 cubeToSphere(float3 p)
 {
     return normalize(p);
@@ -83,7 +74,8 @@ float3 calcGeom(float2 uv, int faceID)
 
 void computeSphereFrame(float2 uv, int faceID, out float3 tangent, out float3 binormal, out float3 normal)
 {
-    float2 step = 1.0 / float2(gx, gy);
+    float n = (float)drawConst[0];
+    float2 step = 1.0 / n;
 
     float3 p = calcGeom(uv, faceID);
     float3 px = calcGeom(uv + float2(step.x, 0), faceID);
@@ -107,19 +99,19 @@ VS_OUTPUT VS(uint vID : SV_VertexID, uint iID : SV_InstanceID)
         float2(-1, -1), float2(1, -1), float2(-1, 1),
         float2(1, -1), float2(1, 1), float2(-1, 1)
     };
-    uint n = drawConst[0];
+    float n = (float)drawConst[0];
 
     float2 p = quad[vID % 6];
     int qID = vID / 6;
-    int vg = (int)(gx * gy);
+    int vg = (int)(n * n);
     int localID = qID % vg;
     int faceID = qID / vg;
 
-    int px = localID % (int)gx;
-    int py = localID / (int)gx;
+    int px = localID % (int)n;
+    int py = localID / (int)n;
 
-    float2 uv = float2(px + 0.5 + p.x * 0.5, py + 0.5 + p.y * 0.5) / float2(gx, gy);
-    float2 step = 1 / float2(gx, gy);
+    float2 uv = float2(px + 0.5 + p.x * 0.5, py + 0.5 + p.y * 0.5) / n;
+    float2 step = 1 / n;
     float2 uv1 = uv + float2(step.x, 0);
     float2 uv2 = uv + float2(0, step.y);
 
