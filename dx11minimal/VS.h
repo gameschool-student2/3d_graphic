@@ -36,18 +36,6 @@ struct VS_OUTPUT
     float2 uv : TEXCOORD0;
 };
 
-float3 rotY(float3 pos, float a)
-{
-    float3x3 m =
-    {
-        cos(a), 0, sin(a),
-        0, 1, 0,
-        -sin(a), 0, cos(a)
-    };
-    pos = mul(pos, m);
-    return pos;
-}
-
 float3 calculatePositionOnCurve(float u, float p, float q, float radius) {
 
     const float cu = cos(u);
