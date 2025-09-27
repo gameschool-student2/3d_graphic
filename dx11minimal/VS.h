@@ -107,6 +107,7 @@ VS_OUTPUT VS(uint vID : SV_VertexID, uint iID : SV_InstanceID)
         float2(-1, -1), float2(1, -1), float2(-1, 1),
         float2(1, -1), float2(1, 1), float2(-1, 1)
     };
+    uint n = drawConst[0];
 
     float2 p = quad[vID % 6];
     int qID = vID / 6;
