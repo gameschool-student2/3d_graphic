@@ -38,6 +38,8 @@ struct VS_OUTPUT
 
 float4 PS(VS_OUTPUT input) : SV_Target
 {
+    //return float4(input.vnorm.xyz, 1);
+
     float3 lightDir = normalize(float3(1, -1, 0));
     float4 ambientColor = float4(0.15, 0.15, 0.15, 1);
     float specularPower = 2;
