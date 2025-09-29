@@ -238,7 +238,7 @@ float4 PS(VS_OUTPUT input) : SV_Target
     float3 binormal = normalize(input.binormal.xyz);
     float3x3 tbn = float3x3(tangent, binormal, vnorm);
 
-    float2 brick_uv = float2(10, 10);
+    float2 brick_uv = float2(30, 15);
 
     float3 fn = normal(input.uv * brick_uv, tbn);
 
