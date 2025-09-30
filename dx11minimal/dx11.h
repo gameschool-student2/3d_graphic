@@ -957,5 +957,12 @@ void mainLoop()
 
 	ConstBuf::drawerV[0] = n;
 	Draw::NullDrawer(n * n, 1);
+
+	n = 64;
+
+	ConstBuf::drawerV[0] = n;
+	Shaders::vShader(0);
+	Draw::NullDrawer(n * n, 1);
+
 	Draw::Present();
 }
