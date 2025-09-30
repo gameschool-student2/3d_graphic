@@ -30,6 +30,12 @@
     <ClInclude Include="dx11.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="PostProcess_VS.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ChromaticAbberations_PS.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dx11minimal.cpp">
