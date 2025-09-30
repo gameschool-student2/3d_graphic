@@ -461,7 +461,7 @@ namespace Shaders {
 
 	void Init()
 	{
-		CreateVS(0, nameToPatchLPCWSTR("VS.h"));
+		CreateVS(0, nameToPatchLPCWSTR("Ball_VS.h"));
 		CreatePS(0, nameToPatchLPCWSTR("PS.h"));
 	}
 
