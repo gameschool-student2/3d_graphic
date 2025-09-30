@@ -15,11 +15,11 @@ static const float2 directions[4] =
     float2(-1, -1)
 };
 
-static const int iterations = 8;
+static const int iterations = 16;
 
 float4 PS(VS_OUTPUT input) : SV_Target
 {
-    float offsetScale = 0.004;
+    float offsetScale = 0.002;
 
     uint width, height;
     float2 texelSize = float2(1, 1) / float2(width, height);
