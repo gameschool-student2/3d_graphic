@@ -948,7 +948,7 @@ void mainLoop()
 
 	Textures::RenderTarget(1, 0);
 
-	Draw::Clear({ 0, 0, 1, 0 });
+	Draw::Clear({ 0.1, 0.1, 0.1, 0 });
 	Draw::ClearDepth();
 	Depth::Depth(Depth::depthmode::on);
 	Rasterizer::Cull(Rasterizer::cullmode::off);
