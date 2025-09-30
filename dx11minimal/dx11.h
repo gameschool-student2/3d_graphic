@@ -462,6 +462,8 @@ namespace Shaders {
 	void Init()
 	{
 		CreateVS(0, nameToPatchLPCWSTR("Ball_VS.h"));
+		CreateVS(1, nameToPatchLPCWSTR("Plane_VS.h"));
+
 		CreatePS(0, nameToPatchLPCWSTR("PS.h"));
 	}
 
@@ -944,7 +946,7 @@ void mainLoop()
 	Draw::ClearDepth();
 	Depth::Depth(Depth::depthmode::on);
 	Rasterizer::Cull(Rasterizer::cullmode::off);
-	Shaders::vShader(0);
+	Shaders::vShader(1);
 	Shaders::pShader(0);
 	ConstBuf::ConstToVertex(4);
 	ConstBuf::ConstToPixel(4);
