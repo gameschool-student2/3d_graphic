@@ -127,11 +127,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="ChromaticAbberations_PS.h" />
+    <ClInclude Include="Combine_PS.h" />
+    <ClInclude Include="ExtractBright_PS.h" />
     <ClInclude Include="dx11.h" />
     <ClInclude Include="dx11minimal.h" />
     <ClInclude Include="framework.h" />
     <None Include="PS.h" />
+    <ClInclude Include="KawaseBlur_PS.h" />
     <ClInclude Include="PostProcess_VS.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />

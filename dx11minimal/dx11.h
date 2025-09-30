@@ -465,7 +465,10 @@ namespace Shaders {
 		CreatePS(0, nameToPatchLPCWSTR("PS.h"));
 
 		CreateVS(1, nameToPatchLPCWSTR("PostProcess_VS.h"));
-		CreatePS(1, nameToPatchLPCWSTR("ChromaticAbberations_PS.h"));
+
+		CreatePS(1, nameToPatchLPCWSTR("ExtractBright_PS.h"));
+		CreatePS(2, nameToPatchLPCWSTR("KawaseBlur_PS.h"));
+		CreatePS(3, nameToPatchLPCWSTR("Combine_PS.h"));
 	}
 
 	void vShader(unsigned int n)
@@ -863,6 +866,8 @@ void Dx11Init()
 	Textures::Create(1, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(width, height), true, true);
 	//rt2
 	Textures::Create(2, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(width, height), true, true);
+	//rt3
+	Textures::Create(3, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(width, height), true, true);
 }
 
 
@@ -948,7 +953,7 @@ void mainLoop()
 
 	Textures::RenderTarget(1, 0);
 
-	Draw::Clear({ 0, 0, 1, 0 });
+	Draw::Clear({ 0.05, 0.05, 0.05, 0 });
 	Draw::ClearDepth();
 	Depth::Depth(Depth::depthmode::on);
 	Rasterizer::Cull(Rasterizer::cullmode::off);
@@ -967,7 +972,7 @@ void mainLoop()
 	//------------------------------------
 
 	Textures::CreateMipMap();
-	Textures::RenderTarget(0, 0);
+	Textures::RenderTarget(2, 0);
 	context->PSSetShaderResources(0, 1, &Textures::Texture[1].TextureResView);
 
 	Blend::Blending(Blend::blendmode::off, Blend::blendop::add);
@@ -976,6 +981,18 @@ void mainLoop()
 
 	Shaders::vShader(1);
 	Shaders::pShader(1);
+	Draw::NullDrawer(1, 1);
+
+	Textures::RenderTarget(3, 0);
+	context->PSSetShaderResources(1, 1, &Textures::Texture[2].TextureResView);
+
+	Shaders::pShader(2);
+	Draw::NullDrawer(1, 1);
+
+	Textures::RenderTarget(0, 0);
+	context->PSSetShaderResources(1, 1, &Textures::Texture[3].TextureResView);
+
+	Shaders::pShader(3);
 	Draw::NullDrawer(1, 1);
 
 	//------------------------------------

@@ -33,7 +33,13 @@
     <ClInclude Include="PostProcess_VS.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="ChromaticAbberations_PS.h">
+    <ClInclude Include="ExtractBright_PS.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="KawaseBlur_PS.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Combine_PS.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
