@@ -47,7 +47,7 @@ float4 PS(VS_OUTPUT input) : SV_Target
     lightDir = -lightDir;
 
     float3 eye = -(view[0]._m02_m12_m22) * view[0]._m32;
-    float3 viewDir = input.wpos.xyz - eye;
+    float3 viewDir = normalize(input.wpos.xyz - eye);
 
     float3 diffuse = saturate(dot(lightDir, input.vnorm));
 
