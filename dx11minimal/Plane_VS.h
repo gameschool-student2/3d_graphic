@@ -36,31 +36,6 @@ struct VS_OUTPUT
     float2 uv : TEXCOORD0;
 };
 
-float3 rotY(float3 pos, float a)
-{
-    float3x3 m =
-    {
-        cos(a), 0, sin(a),
-        0, 1, 0,
-        -sin(a), 0, cos(a)
-    };
-    pos = mul(pos, m);
-    return pos;
-}
-
-float3 ball(float2 p)
-{
-    float radius = 10;
-    float n = (float)drawConst[0];
-
-    p.x = (p.x / n) * 3.141592653589793;
-    p.y = (p.y / n) * 3.141592653589793 / 2;
-
-    float3 pos = float3(cos(p.x) * cos(p.y) * radius, sin(p.y) * radius, sin(p.x) * cos(p.y) * radius);
-
-    return pos;
-}
-
 VS_OUTPUT VS(uint vID : SV_VertexID)
 {
     VS_OUTPUT output = (VS_OUTPUT)0;
@@ -79,19 +54,9 @@ VS_OUTPUT VS(uint vID : SV_VertexID)
     pos.x += row * 2;
     pos.xy -= (float)n - 1;
 
-    float3 pos0 = ball(pos.xy);
-    float3 pos1 = ball(pos.xy + float2(1, 0));
-    float3 pos2 = ball(pos.xy + float2(0, 1));
-
-    float3 tangent = normalize(pos1 - pos0);
-    float3 binormal = normalize(pos2 - pos0);
-    float3 normal = -normalize(cross(tangent, binormal));
-
-    output.pos = mul(float4(pos0.xyz, 1), mul(view[0], proj[0]));
-    output.vpos = mul(output.pos, view[0]);
-    output.wpos = float4(pos0.xyz, 1);
-    output.uv = pos.xy / n;
-    output.vnorm = float4(normal.xyz, 1);
+    output.pos = mul(pos, mul(view[0], proj[0]));
+    output.uv = float2(1, -1) * p / 2. + .5;
+    output.vnorm = float4(0, 0, 1, 1);
 
     return output;
 }
