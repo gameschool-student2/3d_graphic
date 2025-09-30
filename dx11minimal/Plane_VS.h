@@ -49,14 +49,14 @@ VS_OUTPUT VS(uint vID : SV_VertexID)
     float2 quad[6] = { -1, -1, 1, -1, -1, 1, 1, -1, 1, 1, -1, 1 };
     float2 p = quad[vID % 6];
 
-    float4 pos = float4(p, 0, 1);
-    pos.y += col * 2;
+    float4 pos = float4(p.x * 16, -10, p.y * 16, 1);
+    pos.z += col * 2;
     pos.x += row * 2;
-    pos.xy -= (float)n - 1;
+    pos.xz -= (float)n - 1;
 
     output.pos = mul(pos, mul(view[0], proj[0]));
     output.uv = float2(1, -1) * p / 2. + .5;
-    output.vnorm = float4(0, 0, 1, 1);
+    output.vnorm = float4(0, 1, 0, 1);
 
     return output;
 }
