@@ -50,7 +50,7 @@ float3 rotY(float3 pos, float a)
 
 float3 ball(float2 p)
 {
-    float radius = 10;
+    float radius = 5;
     float n = (float)drawConst[0];
 
     p.x = (p.x / n) * 3.141592653589793;
@@ -86,6 +86,8 @@ VS_OUTPUT VS(uint vID : SV_VertexID)
     float3 tangent = normalize(pos1 - pos0);
     float3 binormal = normalize(pos2 - pos0);
     float3 normal = -normalize(cross(tangent, binormal));
+
+    pos0.xyz -= float3(0, 5, 0);
 
     output.pos = mul(float4(pos0.xyz, 1), mul(view[0], proj[0]));
     output.vpos = mul(output.pos, view[0]);
