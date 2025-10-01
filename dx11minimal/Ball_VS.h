@@ -32,9 +32,9 @@ struct VS_OUTPUT
     float4 pos : SV_POSITION;
     float4 vpos : POSITION0;
     float4 wpos : POSITION1;
-    float4 lpos : POSITION2;
     float4 vnorm : NORMAL1;
     float2 uv : TEXCOORD0;
+    float4 lpos : TEXCOORD1;
 };
 
 float3 ball(float2 p)

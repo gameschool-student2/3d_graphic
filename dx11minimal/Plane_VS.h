@@ -32,9 +32,9 @@ struct VS_OUTPUT
     float4 pos : SV_POSITION;
     float4 vpos : POSITION0;
     float4 wpos : POSITION1;
-    float4 lpos : POSITION2;
     float4 vnorm : NORMAL1;
     float2 uv : TEXCOORD0;
+    float4 lpos : TEXCOORD1;
 };
 
 VS_OUTPUT VS(uint vID : SV_VertexID)
