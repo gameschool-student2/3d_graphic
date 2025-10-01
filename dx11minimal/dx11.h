@@ -977,7 +977,8 @@ void mainLoop()
 	Draw::ClearDepth();
 
 	Shaders::vShader(2);
-	context->PSSetShader(NULL, NULL, 0);
+	Shaders::pShader(0);
+	//context->PSSetShader(NULL, NULL, 0);
 
 	ConstBuf::drawerV[0] = n;
 	Draw::NullDrawer(n * n, 1);
@@ -993,7 +994,7 @@ void mainLoop()
 	Textures::CreateMipMap();
 
 	Textures::RenderTarget(0, 0);
-	context->PSSetShaderResources(0, 1, &Textures::Texture[1].TextureResView);
+	context->PSSetShaderResources(0, 1, &Textures::Texture[1].DepthResView);
 	Draw::Clear({ 0.35, 0.35, 0.35, 0 });
 	Draw::ClearDepth();
 

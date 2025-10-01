@@ -1,3 +1,7 @@
+Texture2D shadowMap : register(t0);
+SamplerComparisonState shadowSampler : register(s0);
+
+
 cbuffer global : register(b5)
 {
     float4 gConst[32];
@@ -40,7 +44,12 @@ struct VS_OUTPUT
 
 float4 PS(VS_OUTPUT input) : SV_Target
 {
-    //return float4(input.vnorm.xyz, 1);
+    float3 projCoords = input.lpos.xyz / input.lpos.w;
+    projCoords.xy = projCoords.xy * 0.5 + 0.5;
+    projCoords.y = 1.0 - projCoords.y; // Инвертируем Y
+
+    // Сравниваем глубину фрагмента с глубиной из карты теней
+    float shadow = shadowMap.SampleCmpLevelZero(shadowSampler, projCoords.xy, projCoords.z);
 
     float3 lightDir = view[1]._m02_m12_m22;
     float4 ambientColor = float4(0.15, 0.15, 0.15, 1);
@@ -58,5 +67,5 @@ float4 PS(VS_OUTPUT input) : SV_Target
     float3 specular = specularPower * spec;
 
     //return saturate(float4(reflectDir, 1));
-    return saturate(float4(ambientColor.xyz + diffuse + specular, 1));
+    return saturate(float4(ambientColor.xyz + diffuse * shadow + specular, 1));
 }
