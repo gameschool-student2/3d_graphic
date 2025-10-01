@@ -465,6 +465,7 @@ namespace Shaders {
 		CreateVS(1, nameToPatchLPCWSTR("Plane_VS.h"));
 
 		CreateVS(2, nameToPatchLPCWSTR("Ball_ShadowMap_VS.h"));
+		CreateVS(3, nameToPatchLPCWSTR("Plane_ShadowMap_VS.h"));
 
 		CreatePS(0, nameToPatchLPCWSTR("PS.h"));
 	}
@@ -968,6 +969,8 @@ void mainLoop()
 	Camera::Camera();
 	Camera::Light();
 
+	//-------------------------------------------
+
 	int n = 64;
 
 	Textures::RenderTarget(1, 0);
@@ -975,25 +978,39 @@ void mainLoop()
 
 	Shaders::vShader(2);
 	context->PSSetShader(NULL, NULL, 0);
+
+	ConstBuf::drawerV[0] = n;
 	Draw::NullDrawer(n * n, 1);
+
+	n = 1;
+
+	ConstBuf::drawerV[0] = n;
+	Shaders::vShader(3);
+	Draw::NullDrawer(n, 1);
+
+	//-------------------------------------------
+
+	Textures::CreateMipMap();
 
 	Textures::RenderTarget(0, 0);
 	Draw::Clear({ 0.35, 0.35, 0.35, 0 });
 	Draw::ClearDepth();
 
-	Shaders::vShader(1);
+	Shaders::vShader(0);
 	Shaders::pShader(0);
-
-	n = 1;
-
-	ConstBuf::drawerV[0] = n;
-	Draw::NullDrawer(n * n, 1);
 
 	n = 64;
 
 	ConstBuf::drawerV[0] = n;
-	Shaders::vShader(0);
 	Draw::NullDrawer(n * n, 1);
+
+	n = 1;
+
+	ConstBuf::drawerV[0] = n;
+	Shaders::vShader(1);
+	Draw::NullDrawer(n, 1);
+
+	//-------------------------------------------
 
 	Draw::Present();
 }

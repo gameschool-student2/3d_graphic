@@ -32,6 +32,7 @@ struct VS_OUTPUT
     float4 pos : SV_POSITION;
     float4 vpos : POSITION0;
     float4 wpos : POSITION1;
+    float4 lpos : POSITION2;
     float4 vnorm : NORMAL1;
     float2 uv : TEXCOORD0;
 };
@@ -78,6 +79,7 @@ VS_OUTPUT VS(uint vID : SV_VertexID)
     pos0.xyz -= float3(0, 5, 0);
 
     output.pos = mul(float4(pos0.xyz, 1), mul(view[0], proj[0]));
+    output.lpos = mul(output.pos, mul(view[1], proj[1]));
     output.vpos = mul(output.pos, view[0]);
     output.wpos = float4(pos0.xyz, 1);
     output.uv = pos.xy / n;
