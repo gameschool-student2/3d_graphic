@@ -40,7 +40,7 @@ float4 PS(VS_OUTPUT input) : SV_Target
 {
     //return float4(input.vnorm.xyz, 1);
 
-    float3 lightDir = normalize(float3(1, -1, 0));
+    float3 lightDir = view[1]._m02_m12_m22;
     float4 ambientColor = float4(0.15, 0.15, 0.15, 1);
     float specularPower = 2;
 

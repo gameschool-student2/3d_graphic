@@ -132,8 +132,8 @@ namespace Textures
 	enum tType { flat, cube };
 	
 
-	DXGI_FORMAT dxTFormat[4] = { DXGI_FORMAT_R8G8B8A8_UNORM ,DXGI_FORMAT_R8G8B8A8_SNORM ,DXGI_FORMAT_R16G16B16A16_FLOAT ,DXGI_FORMAT_R32G32B32A32_FLOAT };
-	enum tFormat { u8, s8, s16, s32 };
+	DXGI_FORMAT dxTFormat[5] = { DXGI_FORMAT_R8G8B8A8_UNORM ,DXGI_FORMAT_R8G8B8A8_SNORM ,DXGI_FORMAT_R16G16B16A16_FLOAT ,DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_R32_TYPELESS };
+	enum tFormat { u8, s8, s16, s32, r32 };
 	D3D11_TEXTURE2D_DESC tdesc;
 	D3D11_SHADER_RESOURCE_VIEW_DESC svDesc;
 	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
@@ -463,6 +463,8 @@ namespace Shaders {
 	{
 		CreateVS(0, nameToPatchLPCWSTR("Ball_VS.h"));
 		CreateVS(1, nameToPatchLPCWSTR("Plane_VS.h"));
+
+		CreateVS(2, nameToPatchLPCWSTR("Ball_ShadowMap_VS.h"));
 
 		CreatePS(0, nameToPatchLPCWSTR("PS.h"));
 	}
@@ -858,6 +860,9 @@ void Dx11Init()
 	
 	//main RT
 	Textures::Create(0, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(width, height), false, true);
+
+	//shadow map
+	Textures::Create(1, Textures::tType::flat, Textures::tFormat::r32, XMFLOAT2(1024, 1024), true, true);
 }
 
 
@@ -914,6 +919,20 @@ float DegreesToRadians(float degrees)
 
 namespace Camera
 {
+	void Light()
+	{
+		XMVECTOR Eye = XMVectorSet(-100, 100, 0.0f, 0.0f);
+		XMVECTOR At = XMVectorSet(0, 0, 0, 0.0f);
+		XMVECTOR Up = XMVectorSet(0, 1, 0, 0.0f);
+
+		ConstBuf::camera.world[1] = XMMatrixIdentity();
+		ConstBuf::camera.view[1] = XMMatrixTranspose(XMMatrixLookAtLH(Eye, At, Up));
+		ConstBuf::camera.proj[1] = XMMatrixTranspose(XMMatrixOrthographicLH(50.0f, 50.0f, 0.1f, 1000.0f));
+
+		ConstBuf::UpdateCamera();
+		ConstBuf::ConstToVertex(3);
+		ConstBuf::ConstToPixel(3);
+	}
 
 	void Camera()
 	{
@@ -941,19 +960,31 @@ void mainLoop()
 	InputAssembler::IA(InputAssembler::topology::triList);
 	Blend::Blending(Blend::blendmode::off, Blend::blendop::add);
 
-	Textures::RenderTarget(0, 0);
-	Draw::Clear({ 0.35, 0.35, 0.35, 0 });
-	Draw::ClearDepth();
 	Depth::Depth(Depth::depthmode::on);
 	Rasterizer::Cull(Rasterizer::cullmode::off);
-	Shaders::vShader(1);
-	Shaders::pShader(0);
 	ConstBuf::ConstToVertex(4);
 	ConstBuf::ConstToPixel(4);
 
 	Camera::Camera();
+	Camera::Light();
 
-	int n = 1;
+	int n = 64;
+
+	Textures::RenderTarget(1, 0);
+	Draw::ClearDepth();
+
+	Shaders::vShader(2);
+	context->PSSetShader(NULL, NULL, 0);
+	Draw::NullDrawer(n * n, 1);
+
+	Textures::RenderTarget(0, 0);
+	Draw::Clear({ 0.35, 0.35, 0.35, 0 });
+	Draw::ClearDepth();
+
+	Shaders::vShader(1);
+	Shaders::pShader(0);
+
+	n = 1;
 
 	ConstBuf::drawerV[0] = n;
 	Draw::NullDrawer(n * n, 1);
