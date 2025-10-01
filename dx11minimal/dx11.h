@@ -993,6 +993,7 @@ void mainLoop()
 	Textures::CreateMipMap();
 
 	Textures::RenderTarget(0, 0);
+	context->PSSetShaderResources(0, 1, &Textures::Texture[1].TextureResView);
 	Draw::Clear({ 0.35, 0.35, 0.35, 0 });
 	Draw::ClearDepth();
 
