@@ -922,13 +922,13 @@ namespace Camera
 {
 	void Light()
 	{
-		XMVECTOR Eye = XMVectorSet(-100, 100, 0.0f, 0.0f);
+		XMVECTOR Eye = XMVectorSet(-50, 50, 0.0f, 0.0f);
 		XMVECTOR At = XMVectorSet(0, 0, 0, 0.0f);
 		XMVECTOR Up = XMVectorSet(0, 1, 0, 0.0f);
 
 		ConstBuf::camera.world[1] = XMMatrixIdentity();
 		ConstBuf::camera.view[1] = XMMatrixTranspose(XMMatrixLookAtLH(Eye, At, Up));
-		ConstBuf::camera.proj[1] = XMMatrixTranspose(XMMatrixOrthographicLH(50.0f, 50.0f, 0.1f, 1000.0f));
+		ConstBuf::camera.proj[1] = XMMatrixTranspose(XMMatrixPerspectiveFovLH(DegreesToRadians(70), iaspect, 0.01f, 100.0f));
 
 		ConstBuf::UpdateCamera();
 		ConstBuf::ConstToVertex(3);
@@ -977,8 +977,8 @@ void mainLoop()
 	Draw::ClearDepth();
 
 	Shaders::vShader(2);
-	Shaders::pShader(0);
-	//context->PSSetShader(NULL, NULL, 0);
+	//Shaders::pShader(0);
+	context->PSSetShader(NULL, NULL, 0);
 
 	ConstBuf::drawerV[0] = n;
 	Draw::NullDrawer(n * n, 1);
