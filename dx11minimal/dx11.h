@@ -11,6 +11,7 @@
 #include <DirectXPackedVector.h>
 #include <debugapi.h>
 #include <stdio.h>
+#include <vector>
 
 using namespace DirectX;
 
@@ -28,6 +29,20 @@ static inline int32 _log2(float x)
 
 	return log2;
 }
+
+struct Vertex {
+	XMFLOAT3 position;
+	XMFLOAT3 normal;
+	XMFLOAT2 uv;
+};
+
+struct Mesh {
+	std::vector<Vertex> vertices;
+	std::vector<uint32_t> indices;
+	ID3D11Buffer* vertexBuffer = nullptr;
+	ID3D11Buffer* indexBuffer = nullptr;
+	int textureIndex = -1;
+};
 
 namespace timer
 {
@@ -161,15 +176,6 @@ namespace Textures
 	} textureDesc;
 
 	textureDesc Texture[max_tex];
-
-	struct TargaHeader
-	{
-		unsigned char data1[12];
-		unsigned short width;
-		unsigned short height;
-		unsigned char bpp;
-		unsigned char data2;
-	};
 
 	byte currentRT = 0;
 
@@ -390,93 +396,141 @@ namespace Textures
 	}
 
 
-	bool LoadTarga32Bit(char* filename)
-	{
-		int error, bpp, imageSize, index, i, j, k;
-		FILE* filePtr;
-		unsigned int count;
-		TargaHeader targaFileHeader;
-		unsigned char* targaImage;
+	// Функция загрузки текстуры из файла
+	int LoadTexture(const char* filename) {
+		static int currentIndex = 1; // 0 занят под main RT
+
+		// Поиск свободного слота
+		while (currentIndex < max_tex && Texture[currentIndex].pTexture != nullptr) {
+			currentIndex++;
+		}
+		if (currentIndex >= max_tex) return -1;
+
+		// Загрузка текстуры используя DirectX Tool Kit
+		// Требуется #include <WICTextureLoader.h> и линковка DirectXTK.lib
+		HRESULT hr = DirectX::CreateWICTextureFromFile(device,
+			Shaders::nameToPatchLPCWSTR(filename),
+			&Texture[currentIndex].pTexture,
+			&Texture[currentIndex].TextureResView);
+
+		if (SUCCEEDED(hr)) {
+			// Получаем размеры текстуры
+			ID3D11Texture2D* pTextureInterface;
+			Texture[currentIndex].pTexture->QueryInterface<ID3D11Texture2D>(&pTextureInterface);
+			D3D11_TEXTURE2D_DESC desc;
+			pTextureInterface->GetDesc(&desc);
+
+			Texture[currentIndex].size = XMFLOAT2((float)desc.Width, (float)desc.Height);
+			Texture[currentIndex].type = tType::flat;
+			Texture[currentIndex].format = tFormat::u8;
+			Texture[currentIndex].mipMaps = true;
+			Texture[currentIndex].depth = false;
+
+			pTextureInterface->Release();
+			return currentIndex++;
+		}
+
+		return -1;
+	}
 
 
-		// Open the targa file for reading in binary.
-		error = fopen_s(&filePtr, filename, "rb");
-		if (error != 0)
-		{
+}
+
+
+namespace Models {
+	std::vector<Mesh> meshes;
+
+	// Функция загрузки модели из TXT файла
+	bool LoadModel(const char* filename, int textureIndex) {
+		Mesh mesh;
+		FILE* file;
+		fopen_s(&file, filename, "r");
+		if (!file) {
+			OutputDebugString("Failed to open model file\n");
 			return false;
 		}
 
-		// Read in the file header.
-		count = (unsigned int)fread(&targaFileHeader, sizeof(TargaHeader), 1, filePtr);
-		if (count != 1)
-		{
-			return false;
+		char line[256];
+		int vertexCount = 0;
+		int faceCount = 0;
+
+		// Чтение количества вершин и полигонов
+		fgets(line, sizeof(line), file);
+		sscanf_s(line, "%d %d", &vertexCount, &faceCount);
+
+		mesh.vertices.resize(vertexCount);
+
+		// Чтение вершин (позиция, нормаль, UV)
+		for (int i = 0; i < vertexCount; i++) {
+			fgets(line, sizeof(line), file);
+			sscanf_s(line, "%f %f %f %f %f %f %f %f",
+				&mesh.vertices[i].position.x, &mesh.vertices[i].position.y, &mesh.vertices[i].position.z,
+				&mesh.vertices[i].normal.x, &mesh.vertices[i].normal.y, &mesh.vertices[i].normal.z,
+				&mesh.vertices[i].uv.x, &mesh.vertices[i].uv.y);
 		}
 
-		// Get the important information from the header.
-		m_height = (int)targaFileHeader.height;
-		m_width = (int)targaFileHeader.width;
-		bpp = (int)targaFileHeader.bpp;
+		mesh.indices.resize(faceCount * 3);
 
-		// Check that it is 32 bit and not 24 bit.
-		if (bpp != 32)
-		{
-			return false;
+		// Чтение индексов полигонов
+		for (int i = 0; i < faceCount; i++) {
+			fgets(line, sizeof(line), file);
+			int i0, i1, i2;
+			sscanf_s(line, "%d %d %d", &i0, &i1, &i2);
+			mesh.indices[i * 3] = i0;
+			mesh.indices[i * 3 + 1] = i1;
+			mesh.indices[i * 3 + 2] = i2;
 		}
+		fclose(file);
 
-		// Calculate the size of the 32 bit image data.
-		imageSize = m_width * m_height * 4;
+		// Создание вершинного буфера
+		D3D11_BUFFER_DESC vbd;
+		ZeroMemory(&vbd, sizeof(vbd));
+		vbd.Usage = D3D11_USAGE_DEFAULT;
+		vbd.ByteWidth = sizeof(Vertex) * vertexCount;
+		vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		vbd.CPUAccessFlags = 0;
 
-		// Allocate memory for the targa image data.
-		targaImage = new unsigned char[imageSize];
+		D3D11_SUBRESOURCE_DATA vinitData;
+		ZeroMemory(&vinitData, sizeof(vinitData));
+		vinitData.pSysMem = mesh.vertices.data();
+		HRESULT hr = device->CreateBuffer(&vbd, &vinitData, &mesh.vertexBuffer);
 
-		// Read in the targa image data.
-		count = (unsigned int)fread(targaImage, 1, imageSize, filePtr);
-		if (count != imageSize)
-		{
-			return false;
-		}
+		// Создание индексного буфера
+		D3D11_BUFFER_DESC ibd;
+		ZeroMemory(&ibd, sizeof(ibd));
+		ibd.Usage = D3D11_USAGE_DEFAULT;
+		ibd.ByteWidth = sizeof(uint32_t) * faceCount * 3;
+		ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+		ibd.CPUAccessFlags = 0;
 
-		// Close the file.
-		error = fclose(filePtr);
-		if (error != 0)
-		{
-			return false;
-		}
+		D3D11_SUBRESOURCE_DATA iinitData;
+		ZeroMemory(&iinitData, sizeof(iinitData));
+		iinitData.pSysMem = mesh.indices.data();
+		hr = device->CreateBuffer(&ibd, &iinitData, &mesh.indexBuffer);
 
-		// Allocate memory for the targa destination data.
-		m_targaData = new unsigned char[imageSize];
-
-		// Initialize the index into the targa destination data array.
-		index = 0;
-
-		// Initialize the index into the targa image data.
-		k = (m_width * m_height * 4) - (m_width * 4);
-
-		// Now copy the targa image data into the targa destination array in the correct order since the targa format is stored upside down and also is not in RGBA order.
-		for (j = 0; j < m_height; j++)
-		{
-			for (i = 0; i < m_width; i++)
-			{
-				m_targaData[index + 0] = targaImage[k + 2];  // Red.
-				m_targaData[index + 1] = targaImage[k + 1];  // Green.
-				m_targaData[index + 2] = targaImage[k + 0];  // Blue
-				m_targaData[index + 3] = targaImage[k + 3];  // Alpha
-
-				// Increment the indexes into the targa data.
-				k += 4;
-				index += 4;
-			}
-
-			// Set the targa image data index back to the preceding row at the beginning of the column since its reading it in upside down.
-			k -= (m_width * 8);
-		}
-
-		// Release the targa image data now that it was copied into the destination array.
-		delete[] targaImage;
-		targaImage = 0;
-
+		mesh.textureIndex = textureIndex;
+		meshes.push_back(mesh);
 		return true;
+	}
+
+	void DrawMesh(int meshIndex) {
+		if (meshIndex >= meshes.size()) return;
+
+		Mesh& mesh = meshes[meshIndex];
+		UINT stride = sizeof(Vertex);
+		UINT offset = 0;
+
+		// Установка буферов
+		context->IASetVertexBuffers(0, 1, &mesh.vertexBuffer, &stride, &offset);
+		context->IASetIndexBuffer(mesh.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+		// Установка текстуры если есть
+		if (mesh.textureIndex >= 0) {
+			Textures::TextureToShader(mesh.textureIndex, 0, targetshader::pixel);
+		}
+
+		// Отрисовка модели
+		context->DrawIndexed(mesh.indices.size(), 0, 0);
 	}
 }
 
@@ -562,6 +616,18 @@ namespace Shaders {
 	{
 		CreateVS(0, nameToPatchLPCWSTR("VS.h"));
 		CreatePS(0, nameToPatchLPCWSTR("PS.h"));
+
+		// Создание input layout
+		D3D11_INPUT_ELEMENT_DESC layout[] = {
+			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+		};
+
+		ID3D11InputLayout* inputLayout;
+		device->CreateInputLayout(layout, 3, VS[0].pBlob->GetBufferPointer(),
+			VS[0].pBlob->GetBufferSize(), &inputLayout);
+		context->IASetInputLayout(inputLayout);
 	}
 
 	void vShader(unsigned int n)
@@ -573,6 +639,7 @@ namespace Shaders {
 	{
 		context->PSSetShader(PS[n].pShader, NULL, 0);
 	}
+
 
 }
 
@@ -956,7 +1023,11 @@ void Dx11Init()
 	//main RT
 	Textures::Create(0, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(width, height), false, true);
 
-	Textures::Create(1, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(width, height), false, true);
+
+	int textureId = Textures::LoadTexture("texture.png");
+	if (textureId != -1) {
+		Models::LoadModel("model.txt", textureId);
+	}
 }
 
 
@@ -1050,11 +1121,17 @@ void mainLoop()
 	ConstBuf::ConstToVertex(4);
 	ConstBuf::ConstToPixel(4);
 
+	// Установка сэмплера для текстуры
+	Sampler::Sampler(targetshader::pixel, 0, Sampler::filter::linear, Sampler::addr::wrap, Sampler::addr::wrap);
+
 	Camera::Camera();
 
-	int n = 64;
+	// Отрисовка всех моделей
+	for (int i = 0; i < Models::meshes.size(); i++) {
+		Models::DrawMesh(i);
+	}
 
-	ConstBuf::drawerV[0] = n;
-	Draw::NullDrawer(n * n, 1);
+	//ConstBuf::drawerV[0] = n;
+	//Draw::NullDrawer(n * n, 1);
 	Draw::Present();
 }

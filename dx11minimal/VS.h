@@ -27,6 +27,12 @@ cbuffer drawMat : register(b2)
     float hilight;
 };
 
+struct VS_INPUT {
+    float3 position : POSITION;
+    float3 normal : NORMAL;
+    float2 uv : TEXCOORD;
+};
+
 struct VS_OUTPUT
 {
     float4 pos : SV_POSITION;
@@ -35,31 +41,6 @@ struct VS_OUTPUT
     float4 vnorm : NORMAL1;
     float2 uv : TEXCOORD0;
 };
-
-float3 rotY(float3 pos, float a)
-{
-    float3x3 m =
-    {
-        cos(a), 0, sin(a),
-        0, 1, 0,
-        -sin(a), 0, cos(a)
-    };
-    pos = mul(pos, m);
-    return pos;
-}
-
-float3 ball(float2 p)
-{
-    float radius = 10;
-    float n = (float)drawConst[0];
-
-    p.x = (p.x / n) * 3.141592653589793;
-    p.y = (p.y / n) * 3.141592653589793 / 2;
-
-    float3 pos = float3(cos(p.x) * cos(p.y) * radius, sin(p.y) * radius, sin(p.x) * cos(p.y) * radius);
-
-    return pos;
-}
 
 VS_OUTPUT VS(uint vID : SV_VertexID)
 {
