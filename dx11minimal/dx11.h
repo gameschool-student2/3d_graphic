@@ -461,13 +461,13 @@ namespace Shaders {
 
 	void Init()
 	{
-		CreateVS(0, nameToPatchLPCWSTR("Ball_VS.h"));
-		CreateVS(1, nameToPatchLPCWSTR("Plane_VS.h"));
+		CreateVS(0, nameToPatchLPCWSTR("..\\dx11minimal\\Ball_VS.h"));
+		CreateVS(1, nameToPatchLPCWSTR("..\\dx11minimal\\Plane_VS.h"));
 
-		CreateVS(2, nameToPatchLPCWSTR("Ball_ShadowMap_VS.h"));
-		CreateVS(3, nameToPatchLPCWSTR("Plane_ShadowMap_VS.h"));
+		CreateVS(2, nameToPatchLPCWSTR("..\\dx11minimal\\Ball_ShadowMap_VS.h"));
+		CreateVS(3, nameToPatchLPCWSTR("..\\dx11minimal\\Plane_ShadowMap_VS.h"));
 
-		CreatePS(0, nameToPatchLPCWSTR("PS.h"));
+		CreatePS(0, nameToPatchLPCWSTR("..\\dx11minimal\\PS.h"));
 	}
 
 	void vShader(unsigned int n)
