@@ -12,6 +12,7 @@
 #include <debugapi.h>
 #include <stdio.h>
 #include <vector>
+#include <wincodec.h>
 
 using namespace DirectX;
 
