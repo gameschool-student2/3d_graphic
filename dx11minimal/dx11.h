@@ -990,7 +990,7 @@ void mainLoop()
 	Draw::NullDrawer(n, 1);
 
 	//-------------------------------------------
-	Sampler::SamplerComp(0);
+	Sampler::SamplerComp(0); // Компилируем сэмплер для корректного просчёта shadow map
 	Textures::CreateMipMap();
 
 	Textures::RenderTarget(0, 0);
