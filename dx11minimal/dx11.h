@@ -928,7 +928,7 @@ namespace Camera
 
 		ConstBuf::camera.world[1] = XMMatrixIdentity();
 		ConstBuf::camera.view[1] = XMMatrixTranspose(XMMatrixLookAtLH(Eye, At, Up));
-		ConstBuf::camera.proj[1] = XMMatrixTranspose(XMMatrixPerspectiveFovLH(DegreesToRadians(70), iaspect, 0.01f, 100.0f));
+		ConstBuf::camera.proj[1] = XMMatrixTranspose(XMMatrixOrthographicLH(50, 50, 0.01f, 100.0f));
 
 		ConstBuf::UpdateCamera();
 		ConstBuf::ConstToVertex(3);
@@ -977,7 +977,7 @@ void mainLoop()
 	Draw::ClearDepth();
 
 	Shaders::vShader(2);
-	//Shaders::pShader(0);
+	Shaders::pShader(0);
 	context->PSSetShader(NULL, NULL, 0);
 
 	ConstBuf::drawerV[0] = n;
