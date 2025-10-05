@@ -100,7 +100,7 @@ namespace Rasterizer
 		rasterizerState.FrontCounterClockwise = true;
 		rasterizerState.DepthBias = false;
 		rasterizerState.DepthBiasClamp = 0;
-		rasterizerState.SlopeScaledDepthBias = 0;
+		rasterizerState.SlopeScaledDepthBias = 2; // Устанавливаем параметр на 2, чтобы избежать самоналожения теней
 		rasterizerState.DepthClipEnable = false;
 		rasterizerState.ScissorEnable = true;
 		rasterizerState.MultisampleEnable = false;
