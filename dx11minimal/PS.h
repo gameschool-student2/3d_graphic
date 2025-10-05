@@ -49,7 +49,7 @@ float4 PS(VS_OUTPUT input) : SV_Target
     projCoords.y = 1.0 - projCoords.y; // Инвертируем Y
 
     // Сравниваем глубину фрагмента с глубиной из карты теней
-    float shadow = shadowMap.SampleCmpLevelZero(shadowSampler, projCoords.xy, projCoords.z).r;
+    float shadow = shadowMap.SampleCmpLevelZero(shadowSampler, projCoords.xy, projCoords.z);
 
     float3 lightDir = view[1]._m02_m12_m22;
     float4 ambientColor = float4(0.15, 0.15, 0.15, 1);
