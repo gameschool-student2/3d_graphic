@@ -11,8 +11,6 @@
 #include <DirectXPackedVector.h>
 #include <debugapi.h>
 #include <stdio.h>
-#include <vector>
-#include <wincodec.h>
 
 using namespace DirectX;
 
@@ -30,20 +28,6 @@ static inline int32 _log2(float x)
 
 	return log2;
 }
-
-struct Vertex {
-	XMFLOAT3 position;
-	XMFLOAT3 normal;
-	XMFLOAT2 uv;
-};
-
-struct Mesh {
-	std::vector<Vertex> vertices;
-	std::vector<uint32_t> indices;
-	ID3D11Buffer* vertexBuffer = nullptr;
-	ID3D11Buffer* indexBuffer = nullptr;
-	int textureIndex = -1;
-};
 
 namespace timer
 {
@@ -147,7 +131,7 @@ namespace Textures
 #define mainRTIndex 0
 
 	enum tType { flat, cube };
-	
+
 
 	DXGI_FORMAT dxTFormat[4] = { DXGI_FORMAT_R8G8B8A8_UNORM ,DXGI_FORMAT_R8G8B8A8_SNORM ,DXGI_FORMAT_R16G16B16A16_FLOAT ,DXGI_FORMAT_R32G32B32A32_FLOAT };
 	enum tFormat { u8, s8, s16, s32 };
@@ -177,6 +161,15 @@ namespace Textures
 	} textureDesc;
 
 	textureDesc Texture[max_tex];
+
+	struct TargaHeader
+	{
+		unsigned char data1[12];
+		unsigned short width;
+		unsigned short height;
+		unsigned char bpp;
+		unsigned char data2;
+	};
 
 	byte currentRT = 0;
 
@@ -397,141 +390,93 @@ namespace Textures
 	}
 
 
-	// Функция загрузки текстуры из файла
-	int LoadTexture(const char* filename) {
-		static int currentIndex = 1; // 0 занят под main RT
-
-		// Поиск свободного слота
-		while (currentIndex < max_tex && Texture[currentIndex].pTexture != nullptr) {
-			currentIndex++;
-		}
-		if (currentIndex >= max_tex) return -1;
-
-		// Загрузка текстуры используя DirectX Tool Kit
-		// Требуется #include <WICTextureLoader.h> и линковка DirectXTK.lib
-		HRESULT hr = DirectX::CreateWICTextureFromFile(device,
-			Shaders::nameToPatchLPCWSTR(filename),
-			&Texture[currentIndex].pTexture,
-			&Texture[currentIndex].TextureResView);
-
-		if (SUCCEEDED(hr)) {
-			// Получаем размеры текстуры
-			ID3D11Texture2D* pTextureInterface;
-			Texture[currentIndex].pTexture->QueryInterface<ID3D11Texture2D>(&pTextureInterface);
-			D3D11_TEXTURE2D_DESC desc;
-			pTextureInterface->GetDesc(&desc);
-
-			Texture[currentIndex].size = XMFLOAT2((float)desc.Width, (float)desc.Height);
-			Texture[currentIndex].type = tType::flat;
-			Texture[currentIndex].format = tFormat::u8;
-			Texture[currentIndex].mipMaps = true;
-			Texture[currentIndex].depth = false;
-
-			pTextureInterface->Release();
-			return currentIndex++;
-		}
-
-		return -1;
-	}
+	bool LoadTarga32Bit(char* filename)
+	{
+		int error, bpp, imageSize, index, i, j, k;
+		FILE* filePtr;
+		unsigned int count;
+		TargaHeader targaFileHeader;
+		unsigned char* targaImage;
 
 
-}
-
-
-namespace Models {
-	std::vector<Mesh> meshes;
-
-	// Функция загрузки модели из TXT файла
-	bool LoadModel(const char* filename, int textureIndex) {
-		Mesh mesh;
-		FILE* file;
-		fopen_s(&file, filename, "r");
-		if (!file) {
-			OutputDebugString("Failed to open model file\n");
+		// Open the targa file for reading in binary.
+		error = fopen_s(&filePtr, filename, "rb");
+		if (error != 0)
+		{
 			return false;
 		}
 
-		char line[256];
-		int vertexCount = 0;
-		int faceCount = 0;
-
-		// Чтение количества вершин и полигонов
-		fgets(line, sizeof(line), file);
-		sscanf_s(line, "%d %d", &vertexCount, &faceCount);
-
-		mesh.vertices.resize(vertexCount);
-
-		// Чтение вершин (позиция, нормаль, UV)
-		for (int i = 0; i < vertexCount; i++) {
-			fgets(line, sizeof(line), file);
-			sscanf_s(line, "%f %f %f %f %f %f %f %f",
-				&mesh.vertices[i].position.x, &mesh.vertices[i].position.y, &mesh.vertices[i].position.z,
-				&mesh.vertices[i].normal.x, &mesh.vertices[i].normal.y, &mesh.vertices[i].normal.z,
-				&mesh.vertices[i].uv.x, &mesh.vertices[i].uv.y);
+		// Read in the file header.
+		count = (unsigned int)fread(&targaFileHeader, sizeof(TargaHeader), 1, filePtr);
+		if (count != 1)
+		{
+			return false;
 		}
 
-		mesh.indices.resize(faceCount * 3);
+		// Get the important information from the header.
+		m_height = (int)targaFileHeader.height;
+		m_width = (int)targaFileHeader.width;
+		bpp = (int)targaFileHeader.bpp;
 
-		// Чтение индексов полигонов
-		for (int i = 0; i < faceCount; i++) {
-			fgets(line, sizeof(line), file);
-			int i0, i1, i2;
-			sscanf_s(line, "%d %d %d", &i0, &i1, &i2);
-			mesh.indices[i * 3] = i0;
-			mesh.indices[i * 3 + 1] = i1;
-			mesh.indices[i * 3 + 2] = i2;
+		// Check that it is 32 bit and not 24 bit.
+		if (bpp != 32)
+		{
+			return false;
 		}
-		fclose(file);
 
-		// Создание вершинного буфера
-		D3D11_BUFFER_DESC vbd;
-		ZeroMemory(&vbd, sizeof(vbd));
-		vbd.Usage = D3D11_USAGE_DEFAULT;
-		vbd.ByteWidth = sizeof(Vertex) * vertexCount;
-		vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-		vbd.CPUAccessFlags = 0;
+		// Calculate the size of the 32 bit image data.
+		imageSize = m_width * m_height * 4;
 
-		D3D11_SUBRESOURCE_DATA vinitData;
-		ZeroMemory(&vinitData, sizeof(vinitData));
-		vinitData.pSysMem = mesh.vertices.data();
-		HRESULT hr = device->CreateBuffer(&vbd, &vinitData, &mesh.vertexBuffer);
+		// Allocate memory for the targa image data.
+		targaImage = new unsigned char[imageSize];
 
-		// Создание индексного буфера
-		D3D11_BUFFER_DESC ibd;
-		ZeroMemory(&ibd, sizeof(ibd));
-		ibd.Usage = D3D11_USAGE_DEFAULT;
-		ibd.ByteWidth = sizeof(uint32_t) * faceCount * 3;
-		ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
-		ibd.CPUAccessFlags = 0;
+		// Read in the targa image data.
+		count = (unsigned int)fread(targaImage, 1, imageSize, filePtr);
+		if (count != imageSize)
+		{
+			return false;
+		}
 
-		D3D11_SUBRESOURCE_DATA iinitData;
-		ZeroMemory(&iinitData, sizeof(iinitData));
-		iinitData.pSysMem = mesh.indices.data();
-		hr = device->CreateBuffer(&ibd, &iinitData, &mesh.indexBuffer);
+		// Close the file.
+		error = fclose(filePtr);
+		if (error != 0)
+		{
+			return false;
+		}
 
-		mesh.textureIndex = textureIndex;
-		meshes.push_back(mesh);
+		// Allocate memory for the targa destination data.
+		m_targaData = new unsigned char[imageSize];
+
+		// Initialize the index into the targa destination data array.
+		index = 0;
+
+		// Initialize the index into the targa image data.
+		k = (m_width * m_height * 4) - (m_width * 4);
+
+		// Now copy the targa image data into the targa destination array in the correct order since the targa format is stored upside down and also is not in RGBA order.
+		for (j = 0; j < m_height; j++)
+		{
+			for (i = 0; i < m_width; i++)
+			{
+				m_targaData[index + 0] = targaImage[k + 2];  // Red.
+				m_targaData[index + 1] = targaImage[k + 1];  // Green.
+				m_targaData[index + 2] = targaImage[k + 0];  // Blue
+				m_targaData[index + 3] = targaImage[k + 3];  // Alpha
+
+				// Increment the indexes into the targa data.
+				k += 4;
+				index += 4;
+			}
+
+			// Set the targa image data index back to the preceding row at the beginning of the column since its reading it in upside down.
+			k -= (m_width * 8);
+		}
+
+		// Release the targa image data now that it was copied into the destination array.
+		delete[] targaImage;
+		targaImage = 0;
+
 		return true;
-	}
-
-	void DrawMesh(int meshIndex) {
-		if (meshIndex >= meshes.size()) return;
-
-		Mesh& mesh = meshes[meshIndex];
-		UINT stride = sizeof(Vertex);
-		UINT offset = 0;
-
-		// Установка буферов
-		context->IASetVertexBuffers(0, 1, &mesh.vertexBuffer, &stride, &offset);
-		context->IASetIndexBuffer(mesh.indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-		// Установка текстуры если есть
-		if (mesh.textureIndex >= 0) {
-			Textures::TextureToShader(mesh.textureIndex, 0, targetshader::pixel);
-		}
-
-		// Отрисовка модели
-		context->DrawIndexed(mesh.indices.size(), 0, 0);
 	}
 }
 
@@ -617,18 +562,6 @@ namespace Shaders {
 	{
 		CreateVS(0, nameToPatchLPCWSTR("VS.h"));
 		CreatePS(0, nameToPatchLPCWSTR("PS.h"));
-
-		// Создание input layout
-		D3D11_INPUT_ELEMENT_DESC layout[] = {
-			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-		};
-
-		ID3D11InputLayout* inputLayout;
-		device->CreateInputLayout(layout, 3, VS[0].pBlob->GetBufferPointer(),
-			VS[0].pBlob->GetBufferSize(), &inputLayout);
-		context->IASetInputLayout(inputLayout);
 	}
 
 	void vShader(unsigned int n)
@@ -641,13 +574,12 @@ namespace Shaders {
 		context->PSSetShader(PS[n].pShader, NULL, 0);
 	}
 
-
 }
 
 namespace Sampler
 {
 	enum class filter { linear, point, minPoint_magLinear };
-	enum class addr {clamp,wrap};
+	enum class addr { clamp, wrap };
 
 	ID3D11SamplerState* pSampler[3][2][2];//filter, addressU, addressV
 	ID3D11SamplerState* pSamplerComp;//for shadowmapping
@@ -939,7 +871,7 @@ namespace Depth
 namespace Device
 {
 
-	#define DirectXDebugMode false
+#define DirectXDebugMode false
 
 	D3D_DRIVER_TYPE	driverType = D3D_DRIVER_TYPE_NULL;
 
@@ -1020,15 +952,11 @@ void Dx11Init()
 	ConstBuf::Init();
 	Sampler::Init();
 	Shaders::Init();
-	
+
 	//main RT
 	Textures::Create(0, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(width, height), false, true);
 
-
-	int textureId = Textures::LoadTexture("texture.png");
-	if (textureId != -1) {
-		Models::LoadModel("model.txt", textureId);
-	}
+	Textures::Create(1, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(width, height), false, true);
 }
 
 
@@ -1088,10 +1016,10 @@ namespace Camera
 
 	void Camera()
 	{
-		float t = timer::frameBeginTime*.001;
+		float t = timer::frameBeginTime * .001;
 		float angle = 70;
 		float a = 30;
-		XMVECTOR Eye = XMVectorSet(sin(t)*a, 0, cos(t)*a, 0.0f);
+		XMVECTOR Eye = XMVectorSet(sin(t) * a, 0, cos(t) * a, 0.0f);
 		XMVECTOR At = XMVectorSet(0, 0, 0, 0.0f);
 		XMVECTOR Up = XMVectorSet(0, 1, 0, 0.0f);
 
@@ -1122,17 +1050,11 @@ void mainLoop()
 	ConstBuf::ConstToVertex(4);
 	ConstBuf::ConstToPixel(4);
 
-	// Установка сэмплера для текстуры
-	Sampler::Sampler(targetshader::pixel, 0, Sampler::filter::linear, Sampler::addr::wrap, Sampler::addr::wrap);
-
 	Camera::Camera();
 
-	// Отрисовка всех моделей
-	for (int i = 0; i < Models::meshes.size(); i++) {
-		Models::DrawMesh(i);
-	}
+	int n = 64;
 
-	//ConstBuf::drawerV[0] = n;
-	//Draw::NullDrawer(n * n, 1);
+	ConstBuf::drawerV[0] = n;
+	Draw::NullDrawer(n * n, 1);
 	Draw::Present();
 }
