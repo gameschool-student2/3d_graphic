@@ -58,6 +58,8 @@ float4 PS(VS_OUTPUT input) : SV_Target
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
     float3 specular = specularPower * spec;
 
+    float3 tex = inputTexture.Sample(samplerState, input.uv);
+
     //return saturate(float4(reflectDir, 1));
-    return saturate(float4(ambientColor.xyz + diffuse + specular, 1));
+    return saturate(float4(tex * (ambientColor.xyz + diffuse + specular), 1));
 }
