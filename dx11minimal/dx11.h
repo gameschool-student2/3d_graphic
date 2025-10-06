@@ -1067,6 +1067,7 @@ void mainLoop()
 	ConstBuf::ConstToPixel(4);
 
 	Camera::Camera();
+	context->PSSetShaderResources(0, 1, &Textures::Texture[1].TextureResView);
 
 	int n = 64;
 
