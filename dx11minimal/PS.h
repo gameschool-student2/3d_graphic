@@ -1,3 +1,6 @@
+Texture2D inputTexture : register(t0);
+SamplerState samplerState : register(s0);
+
 cbuffer global : register(b5)
 {
     float4 gConst[32];
