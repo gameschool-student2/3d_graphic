@@ -881,12 +881,12 @@ namespace Draw
 
 	void NullDrawer(int quadCount, unsigned int instances = 1)
 	{
-		ConstBuf::Update(0, ConstBuf::drawerV);
-		ConstBuf::ConstToVertex(0);
-		ConstBuf::Update(1, ConstBuf::drawerP);
-		ConstBuf::ConstToPixel(1);
+		ConstBuf::Update(0, ConstBuf::drawerV); // Обновляем константный буфер drawerV
+		ConstBuf::ConstToVertex(0);				// Отправляем константный буфер в вертексный шейдер
+		ConstBuf::Update(1, ConstBuf::drawerP); // Обновляем константный буфер drawerP
+		ConstBuf::ConstToPixel(1);				// Отправляем константный буфер в пиксельный шейдер
 
-		context->DrawInstanced(quadCount * 6, instances, 0, 0);
+		context->DrawInstanced(quadCount * 6, instances, 0, 0); // Вызываем отрисовку
 	}
 
 	void Present()
@@ -949,11 +949,11 @@ void mainLoop()
 	ConstBuf::ConstToVertex(4);
 	ConstBuf::ConstToPixel(4);
 
-	Camera::Camera();
+	Camera::Camera(); // Обновляем камеру
 
-	int n = 8;
+	int n = 8; // Устанавливаем число полигонов на одной стороне плоскости
 
-	ConstBuf::drawerV[0] = n;
-	Draw::NullDrawer(n * n, 1);
-	Draw::Present();
+	ConstBuf::drawerV[0] = n; // Заносим n в константный буфер
+	Draw::NullDrawer(n * n, 1); // Обновляем константный буфер и вызываем отрисовку
+	Draw::Present(); // Выводим изображение на экран
 }
