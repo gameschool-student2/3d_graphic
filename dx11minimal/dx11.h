@@ -390,7 +390,7 @@ namespace Textures
 	}
 
 
-	bool LoadTexture(char* filename)
+	bool LoadTexture(const char* filename)
 	{
 		int error, bpp, imageSize, index, i, j, k;
 		FILE* filePtr;
@@ -479,10 +479,10 @@ namespace Textures
 		rowPitch = (m_width * 4) * sizeof(unsigned char);
 
 		// Copy the targa image data into the texture.
-		context->UpdateSubresource(Texture[i].pTexture, 0, NULL, targaData, rowPitch, 0);
+		context->UpdateSubresource(Texture[1].pTexture, 0, NULL, targaData, rowPitch, 0);
 
 		// Generate mipmaps for this texture.
-		context->GenerateMips(Texture[i].TextureResView);
+		context->GenerateMips(Texture[1].TextureResView);
 
 		// Release the targa image data now that it was copied into the destination array.
 		delete[] targaImage;
@@ -576,8 +576,8 @@ namespace Shaders {
 
 	void Init()
 	{
-		CreateVS(0, nameToPatchLPCWSTR("VS.h"));
-		CreatePS(0, nameToPatchLPCWSTR("PS.h"));
+		CreateVS(0, nameToPatchLPCWSTR("..\\dx11minimal\\VS.h"));
+		CreatePS(0, nameToPatchLPCWSTR("..\\dx11minimal\\PS.h"));
 	}
 
 	void vShader(unsigned int n)
@@ -972,7 +972,7 @@ void Dx11Init()
 	//main RT
 	Textures::Create(0, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(width, height), false, true);
 
-	Textures::LoadTexture("testTexture.tga");
+	Textures::LoadTexture("..\\dx11minimal\\testTexture.tga");
 }
 
 
