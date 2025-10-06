@@ -971,6 +971,8 @@ void Dx11Init()
 
 	//main RT
 	Textures::Create(0, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(width, height), false, true);
+
+	Textures::LoadTexture("testTexture.tga");
 }
 
 
