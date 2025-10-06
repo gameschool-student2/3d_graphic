@@ -390,14 +390,15 @@ namespace Textures
 	}
 
 
-	bool LoadTarga32Bit(char* filename)
+	bool LoadTexture(char* filename)
 	{
 		int error, bpp, imageSize, index, i, j, k;
 		FILE* filePtr;
 		unsigned int count;
 		TargaHeader targaFileHeader;
 		unsigned char* targaImage;
-
+		unsigned char* targaData;
+		unsigned int rowPitch;
 
 		// Open the targa file for reading in binary.
 		error = fopen_s(&filePtr, filename, "rb");
@@ -414,8 +415,8 @@ namespace Textures
 		}
 
 		// Get the important information from the header.
-		m_height = (int)targaFileHeader.height;
-		m_width = (int)targaFileHeader.width;
+		int m_height = (int)targaFileHeader.height;
+		int m_width = (int)targaFileHeader.width;
 		bpp = (int)targaFileHeader.bpp;
 
 		// Check that it is 32 bit and not 24 bit.
@@ -445,7 +446,7 @@ namespace Textures
 		}
 
 		// Allocate memory for the targa destination data.
-		m_targaData = new unsigned char[imageSize];
+		targaData = new unsigned char[imageSize];
 
 		// Initialize the index into the targa destination data array.
 		index = 0;
@@ -458,10 +459,10 @@ namespace Textures
 		{
 			for (i = 0; i < m_width; i++)
 			{
-				m_targaData[index + 0] = targaImage[k + 2];  // Red.
-				m_targaData[index + 1] = targaImage[k + 1];  // Green.
-				m_targaData[index + 2] = targaImage[k + 0];  // Blue
-				m_targaData[index + 3] = targaImage[k + 3];  // Alpha
+				targaData[index + 0] = targaImage[k + 2];  // Red.
+				targaData[index + 1] = targaImage[k + 1];  // Green.
+				targaData[index + 2] = targaImage[k + 0];  // Blue
+				targaData[index + 3] = targaImage[k + 3];  // Alpha
 
 				// Increment the indexes into the targa data.
 				k += 4;
@@ -472,9 +473,24 @@ namespace Textures
 			k -= (m_width * 8);
 		}
 
+		Create(1, tType::flat, tFormat::u8, XMFLOAT2(targaFileHeader.width, targaFileHeader.height), true, false);
+
+		// Set the row pitch of the targa image data.
+		rowPitch = (m_width * 4) * sizeof(unsigned char);
+
+		// Copy the targa image data into the texture.
+		context->UpdateSubresource(Texture[i].pTexture, 0, NULL, targaData, rowPitch, 0);
+
+		// Generate mipmaps for this texture.
+		context->GenerateMips(Texture[i].TextureResView);
+
 		// Release the targa image data now that it was copied into the destination array.
 		delete[] targaImage;
 		targaImage = 0;
+
+		// Release the targa image data now that the image data has been loaded into the texture.
+		delete[] targaData;
+		targaData = 0;
 
 		return true;
 	}
@@ -955,8 +971,6 @@ void Dx11Init()
 
 	//main RT
 	Textures::Create(0, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(width, height), false, true);
-
-	Textures::Create(1, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(width, height), false, true);
 }
 
 
