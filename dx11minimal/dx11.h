@@ -919,13 +919,30 @@ namespace Depth
 
 }
 
-namespace Model
+namespace Models
 {
-	void LoadModel(char* filename)
+	struct VertexType
+	{
+		XMFLOAT3 position;
+		XMFLOAT3 normal;
+		XMFLOAT2 texture;
+	};
+
+	struct ModelType
+	{
+		float x, y, z;
+		float tu, tv;
+		float nx, ny, nz;
+	};
+
+	ID3D11Buffer* vertexBuffer, * indexBuffer;
+
+	void LoadModel(const char* filename)
 	{
 		std::ifstream fin;
 		char input;
 		int i;
+		int vertexCount, indexCount;
 
 
 		// Open the model file.
@@ -934,6 +951,7 @@ namespace Model
 		// If it could not open the file then exit.
 		if (fin.fail())
 		{
+			Shaders::Log("Failed to read the model file\n");
 			return;
 		}
 
@@ -945,13 +963,13 @@ namespace Model
 		}
 
 		// Read in the vertex count.
-		fin >> m_vertexCount;
+		fin >> vertexCount;
 
 		// Set the number of indices to be the same as the vertex count.
-		m_indexCount = m_vertexCount;
+		indexCount = vertexCount;
 
 		// Create the model using the vertex count that was read in.
-		m_model = new ModelType[m_vertexCount];
+		ModelType* model = new ModelType[vertexCount];
 
 		// Read up to the beginning of the data.
 		fin.get(input);
@@ -963,15 +981,93 @@ namespace Model
 		fin.get(input);
 
 		// Read in the vertex data.
-		for (i = 0; i < m_vertexCount; i++)
+		for (i = 0; i < vertexCount; i++)
 		{
-			fin >> m_model[i].x >> m_model[i].y >> m_model[i].z;
-			fin >> m_model[i].tu >> m_model[i].tv;
-			fin >> m_model[i].nx >> m_model[i].ny >> m_model[i].nz;
+			fin >> model[i].x >> model[i].y >> model[i].z;
+			fin >> model[i].tu >> model[i].tv;
+			fin >> model[i].nx >> model[i].ny >> model[i].nz;
 		}
 
 		// Close the model file.
 		fin.close();
+
+
+
+		VertexType* vertices;
+		unsigned long* indices;
+		D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
+		D3D11_SUBRESOURCE_DATA vertexData, indexData;
+		HRESULT result;
+
+		// Set the number of indices in the index array.
+		indexCount = vertexCount;
+
+		// Create the vertex array.
+		vertices = new VertexType[vertexCount];
+
+		// Create the index array.
+		indices = new unsigned long[indexCount];
+
+		// Load the vertex array and index array with data.
+		for (int i = 0; i < vertexCount; i++)
+		{
+			vertices[i].position = XMFLOAT3(model[i].x, model[i].y, model[i].z);
+			vertices[i].texture = XMFLOAT2(model[i].tu, model[i].tv);
+			vertices[i].normal = XMFLOAT3(model[i].nx, model[i].ny, model[i].nz);
+
+			indices[i] = i;
+		}
+
+		// Set up the description of the static vertex buffer.
+		vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+		vertexBufferDesc.ByteWidth = sizeof(VertexType) * vertexCount;
+		vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		vertexBufferDesc.CPUAccessFlags = 0;
+		vertexBufferDesc.MiscFlags = 0;
+		vertexBufferDesc.StructureByteStride = 0;
+
+		// Give the subresource structure a pointer to the vertex data.
+		vertexData.pSysMem = vertices;
+		vertexData.SysMemPitch = 0;
+		vertexData.SysMemSlicePitch = 0;
+
+		// Now create the vertex buffer.
+		result = device->CreateBuffer(&vertexBufferDesc, &vertexData, &vertexBuffer);
+		if (FAILED(result))
+		{
+			Shaders::Log("Failed to create vertex buffer for the model\n");
+			return;
+		}
+
+		// Set up the description of the static index buffer.
+		indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+		indexBufferDesc.ByteWidth = sizeof(unsigned long) * indexCount;
+		indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+		indexBufferDesc.CPUAccessFlags = 0;
+		indexBufferDesc.MiscFlags = 0;
+		indexBufferDesc.StructureByteStride = 0;
+
+		// Give the subresource structure a pointer to the index data.
+		indexData.pSysMem = indices;
+		indexData.SysMemPitch = 0;
+		indexData.SysMemSlicePitch = 0;
+
+		// Create the index buffer.
+		result = device->CreateBuffer(&indexBufferDesc, &indexData, &indexBuffer);
+		if (FAILED(result))
+		{
+			Shaders::Log("Failed to create index buffer for the model\n");
+			return;
+		}
+
+		// Release the arrays now that the vertex and index buffers have been created and loaded.
+		delete[] vertices;
+		vertices = 0;
+
+		delete[] indices;
+		indices = 0;
+
+		Shaders::Log("Model file was read succesfully\n");
 	}
 }
 
@@ -1041,8 +1137,19 @@ namespace InputAssembler
 		}
 
 		context->IASetPrimitiveTopology(ttype);
-		context->IASetInputLayout(NULL);
-		context->IASetVertexBuffers(0, 0, NULL, NULL, NULL);
+		//context->IASetInputLayout(NULL);
+		//context->IASetVertexBuffers(0, 0, NULL, NULL, NULL);
+
+		context->IASetInputLayout(Shaders::VS[1].pLayout);
+
+		unsigned int stride = sizeof(Models::VertexType);
+		unsigned int offset = 0;
+
+		// Set the vertex buffer to active in the input assembler so it can be rendered.
+		context->IASetVertexBuffers(0, 1, &Models::vertexBuffer, &stride, &offset);
+
+		// Set the index buffer to active in the input assembler so it can be rendered.
+		context->IASetIndexBuffer(Models::indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	}
 
 }
@@ -1069,6 +1176,7 @@ void Dx11Init()
 
 	ConstBuf::CreateVertexBuffer();
 	Textures::LoadTexture("..\\dx11minimal\\testTexture.tga");
+	Models::LoadModel("..\\dx11minimal\\Cube.txt");
 }
 
 
@@ -1130,8 +1238,8 @@ namespace Camera
 	{
 		float t = timer::frameBeginTime * .001;
 		float angle = 70;
-		float a = 30;
-		XMVECTOR Eye = XMVectorSet(sin(t) * a, 0, cos(t) * a, 0.0f);
+		float a = 5;
+		XMVECTOR Eye = XMVectorSet(sin(t) * a, 2.0f, cos(t) * a, 0.0f);
 		XMVECTOR At = XMVectorSet(0, 0, 0, 0.0f);
 		XMVECTOR Up = XMVectorSet(0, 1, 0, 0.0f);
 
@@ -1157,7 +1265,7 @@ void mainLoop()
 	Draw::ClearDepth();
 	Depth::Depth(Depth::depthmode::on);
 	Rasterizer::Cull(Rasterizer::cullmode::off);
-	Shaders::vShader(0);
+	Shaders::vShader(1);
 	Shaders::pShader(0);
 	ConstBuf::ConstToVertex(4);
 	ConstBuf::ConstToPixel(4);
@@ -1168,6 +1276,12 @@ void mainLoop()
 	int n = 64;
 
 	ConstBuf::drawerV[0] = n;
-	Draw::NullDrawer(n * n, 1);
+
+	ConstBuf::Update(0, ConstBuf::drawerV);
+	ConstBuf::ConstToVertex(0);
+	ConstBuf::Update(1, ConstBuf::drawerP);
+	ConstBuf::ConstToPixel(1);
+	context->DrawIndexed(36, 0, 0);
+
 	Draw::Present();
 }
