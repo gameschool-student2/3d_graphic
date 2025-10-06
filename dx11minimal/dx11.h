@@ -11,6 +11,7 @@
 #include <DirectXPackedVector.h>
 #include <debugapi.h>
 #include <stdio.h>
+#include <fstream>
 
 using namespace DirectX;
 
@@ -390,7 +391,7 @@ namespace Textures
 	}
 
 
-	bool LoadTexture(const char* filename)
+	void LoadTexture(const char* filename)
 	{
 		int error, bpp, imageSize, index, i, j, k;
 		FILE* filePtr;
@@ -404,14 +405,14 @@ namespace Textures
 		error = fopen_s(&filePtr, filename, "rb");
 		if (error != 0)
 		{
-			return false;
+			return;
 		}
 
 		// Read in the file header.
 		count = (unsigned int)fread(&targaFileHeader, sizeof(TargaHeader), 1, filePtr);
 		if (count != 1)
 		{
-			return false;
+			return;
 		}
 
 		// Get the important information from the header.
@@ -422,7 +423,7 @@ namespace Textures
 		// Check that it is 32 bit and not 24 bit.
 		if (bpp != 32)
 		{
-			return false;
+			return;
 		}
 
 		// Calculate the size of the 32 bit image data.
@@ -435,14 +436,14 @@ namespace Textures
 		count = (unsigned int)fread(targaImage, 1, imageSize, filePtr);
 		if (count != imageSize)
 		{
-			return false;
+			return;
 		}
 
 		// Close the file.
 		error = fclose(filePtr);
 		if (error != 0)
 		{
-			return false;
+			return;
 		}
 
 		// Allocate memory for the targa destination data.
@@ -491,8 +492,6 @@ namespace Textures
 		// Release the targa image data now that the image data has been loaded into the texture.
 		delete[] targaData;
 		targaData = 0;
-
-		return true;
 	}
 }
 
@@ -502,11 +501,13 @@ namespace Shaders {
 	typedef struct {
 		ID3D11VertexShader* pShader;
 		ID3DBlob* pBlob;
+		ID3D11InputLayout* pLayout; // Добавляем новое поле InputLayout для структуры шейдера
 	} VertexShader;
 
 	typedef struct {
 		ID3D11PixelShader* pShader;
 		ID3DBlob* pBlob;
+		ID3D11InputLayout* pLayout; // Здесь то же самое
 	} PixelShader;
 
 	VertexShader VS[255];
@@ -578,6 +579,8 @@ namespace Shaders {
 	{
 		CreateVS(0, nameToPatchLPCWSTR("..\\dx11minimal\\VS.h"));
 		CreatePS(0, nameToPatchLPCWSTR("..\\dx11minimal\\PS.h"));
+
+		CreateVS(1, nameToPatchLPCWSTR("..\\dx11minimal\\Model_VS.h"));
 	}
 
 	void vShader(unsigned int n)
@@ -709,6 +712,42 @@ namespace ConstBuf
 		bd.StructureByteStride = 16;
 
 		HRESULT hr = device->CreateBuffer(&bd, NULL, &buf);
+	}
+
+	void CreateVertexBuffer()
+	{
+		D3D11_INPUT_ELEMENT_DESC polygonLayout[3];
+		unsigned int numElements;
+
+		polygonLayout[0].SemanticName = "POSITION";
+		polygonLayout[0].SemanticIndex = 0;
+		polygonLayout[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		polygonLayout[0].InputSlot = 0;
+		polygonLayout[0].AlignedByteOffset = 0;
+		polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		polygonLayout[0].InstanceDataStepRate = 0;
+
+		polygonLayout[1].SemanticName = "NORMAL";
+		polygonLayout[1].SemanticIndex = 0;
+		polygonLayout[1].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		polygonLayout[1].InputSlot = 0;
+		polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+		polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		polygonLayout[1].InstanceDataStepRate = 0;
+
+		polygonLayout[2].SemanticName = "TEXCOORD";
+		polygonLayout[2].SemanticIndex = 0;
+		polygonLayout[2].Format = DXGI_FORMAT_R32G32_FLOAT;
+		polygonLayout[2].InputSlot = 0;
+		polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+		polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		polygonLayout[2].InstanceDataStepRate = 0;
+
+		numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
+
+		// Create the vertex input layout.
+		device->CreateInputLayout(polygonLayout, numElements, Shaders::VS[1].pBlob->GetBufferPointer(),
+			Shaders::VS[1].pBlob->GetBufferSize(), &Shaders::VS[1].pLayout);
 	}
 
 	void Init()
@@ -880,6 +919,62 @@ namespace Depth
 
 }
 
+namespace Model
+{
+	void LoadModel(char* filename)
+	{
+		std::ifstream fin;
+		char input;
+		int i;
+
+
+		// Open the model file.
+		fin.open(filename);
+
+		// If it could not open the file then exit.
+		if (fin.fail())
+		{
+			return;
+		}
+
+		// Read up to the value of vertex count.
+		fin.get(input);
+		while (input != ':')
+		{
+			fin.get(input);
+		}
+
+		// Read in the vertex count.
+		fin >> m_vertexCount;
+
+		// Set the number of indices to be the same as the vertex count.
+		m_indexCount = m_vertexCount;
+
+		// Create the model using the vertex count that was read in.
+		m_model = new ModelType[m_vertexCount];
+
+		// Read up to the beginning of the data.
+		fin.get(input);
+		while (input != ':')
+		{
+			fin.get(input);
+		}
+		fin.get(input);
+		fin.get(input);
+
+		// Read in the vertex data.
+		for (i = 0; i < m_vertexCount; i++)
+		{
+			fin >> m_model[i].x >> m_model[i].y >> m_model[i].z;
+			fin >> m_model[i].tu >> m_model[i].tv;
+			fin >> m_model[i].nx >> m_model[i].ny >> m_model[i].nz;
+		}
+
+		// Close the model file.
+		fin.close();
+	}
+}
+
 
 
 
@@ -972,6 +1067,7 @@ void Dx11Init()
 	//main RT
 	Textures::Create(0, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(width, height), false, true);
 
+	ConstBuf::CreateVertexBuffer();
 	Textures::LoadTexture("..\\dx11minimal\\testTexture.tga");
 }
 
