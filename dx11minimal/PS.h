@@ -200,16 +200,6 @@ float3 GGXSample(float2 Xi, float roughness, float3 N, float3 tangent, float3 bi
     return normalize(tangent * H.x + binormal * H.y + N * H.z);
 }
 
-float3 ACESFilm(float3 x)
-{
-    float a = 2.51f;
-    float b = 0.03f;
-    float c = 2.43f;
-    float d = 0.59f;
-    float e = 0.14f;
-    return saturate((x * (a * x + b)) / (x * (c * x + d) + e));
-}
-
 /// ////////////////////////////////////////////////////
 
 float4 PS(VS_OUTPUT input) : SV_Target
@@ -269,7 +259,6 @@ float4 PS(VS_OUTPUT input) : SV_Target
     float3 diffuse = kD * albedo * (1.0 / PI) * diffuseIrradiance;
     float3 finalColor = diffuse + specularReflection;
 
-    //finalColor = ACESFilm(finalColor);
-    finalColor = pow(finalColor, 1.0 / 2.2);
+
     return float4(finalColor, 1.0);
 }
