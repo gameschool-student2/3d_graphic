@@ -40,12 +40,6 @@ struct VS_OUTPUT
 
 /////////////////////////////////////////////////////////
 
-//random noise function
-float nrand(float2 n)
-{
-    return frac(sin(dot(n.xy, float2(12.9898, 78.233))) * 43758.5453);
-}
-
 float sincosbundle(float val)
 {
     return sin(cos(2. * val) + sin(4. * val) - cos(5. * val) + sin(3. * val)) * 0.05;
@@ -182,19 +176,6 @@ float3 SampleDiffuseEnv(float3 N, float3 tangent, float3 binormal)
     return irradiance / numSamples;
 }
 
-float random(float2 st)
-{
-    return frac(sin(dot(st.xy,
-        float2(12.9898, 78.233)))
-        * 43758.5453123) * 2 - 1;
-}
-float random_unsigned(float2 st)
-{
-    return frac(sin(dot(st.xy,
-        float2(12.9898, 78.233)))
-        * 43758.5453123);
-}
-
 float fresnelSchlickRoughness(float cosTheta, float f0, float roughness)
 {
     return f0 + (max(1 - roughness, f0) - f0) * pow(1.0 - cosTheta, 5.0);
@@ -217,16 +198,6 @@ float3 GGXSample(float2 Xi, float roughness, float3 N, float3 tangent, float3 bi
 
     // Переход в мировые координаты через TBN-базис
     return normalize(tangent * H.x + binormal * H.y + N * H.z);
-}
-
-float3 ACESFilm(float3 x)
-{
-    float a = 2.51f;
-    float b = 0.03f;
-    float c = 2.43f;
-    float d = 0.59f;
-    float e = 0.14f;
-    return saturate((x * (a * x + b)) / (x * (c * x + d) + e));
 }
 
 /// ////////////////////////////////////////////////////
@@ -288,7 +259,6 @@ float4 PS(VS_OUTPUT input) : SV_Target
     float3 diffuse = kD * albedo * (1.0 / PI) * diffuseIrradiance;
     float3 finalColor = diffuse + specularReflection;
 
-    finalColor = ACESFilm(finalColor);
-    finalColor = pow(finalColor, 1.0 / 2.2);
+
     return float4(finalColor, 1.0);
 }

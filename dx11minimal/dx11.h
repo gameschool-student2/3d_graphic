@@ -465,7 +465,7 @@ namespace Shaders {
 		CreatePS(0, nameToPatchLPCWSTR("PS.h"));
 
 		CreateVS(1, nameToPatchLPCWSTR("PostProcess_VS.h"));
-		CreatePS(1, nameToPatchLPCWSTR("ChromaticAbberations_PS.h"));
+		CreatePS(1, nameToPatchLPCWSTR("Tonemapping_PS.h"));
 	}
 
 	void vShader(unsigned int n)

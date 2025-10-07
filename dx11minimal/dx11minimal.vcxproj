@@ -127,7 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="ChromaticAbberations_PS.h" />
+    <ClInclude Include="Tonemapping_PS.h" />
     <ClInclude Include="dx11.h" />
     <ClInclude Include="dx11minimal.h" />
     <ClInclude Include="framework.h" />
