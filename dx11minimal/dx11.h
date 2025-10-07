@@ -1,3 +1,6 @@
+// Вызываем библиотеки, необходимые для работы с DirectX //
+///////////////////////////////////////////////////////////
+
 #pragma comment(lib, "d3d10.lib")
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d3dcompiler.lib")
@@ -11,8 +14,11 @@
 #include <DirectXPackedVector.h>
 #include <debugapi.h>
 
+///////////////////////////////////////////////////////////
+
 using namespace DirectX;
 
+// Задаём предельную частоту кадров
 #define FRAMES_PER_SECOND 60
 #define FRAME_LEN (1000. / (float) FRAMES_PER_SECOND)
 
@@ -882,9 +888,9 @@ namespace Draw
 	void NullDrawer(int quadCount, unsigned int instances = 1)
 	{
 		ConstBuf::Update(0, ConstBuf::drawerV); // Обновляем константный буфер drawerV
-		ConstBuf::ConstToVertex(0);				// Отправляем константный буфер в вертексный шейдер
+		ConstBuf::ConstToVertex(0);				// Отправляем константный буфер 0 в вершинный шейдер
 		ConstBuf::Update(1, ConstBuf::drawerP); // Обновляем константный буфер drawerP
-		ConstBuf::ConstToPixel(1);				// Отправляем константный буфер в пиксельный шейдер
+		ConstBuf::ConstToPixel(1);				// Отправляем константный буфер 1 в пиксельный шейдер
 
 		context->DrawInstanced(quadCount * 6, instances, 0, 0); // Вызываем отрисовку
 	}
@@ -899,9 +905,9 @@ namespace Draw
 
 void frameConst()
 {
-	ConstBuf::frame.time = XMFLOAT4{ (float)(timer::frameBeginTime * .01) ,0,0,0 };
-	ConstBuf::frame.aspect = XMFLOAT4{ aspect,iaspect, 0, 0 };
-	ConstBuf::UpdateFrame();
+	ConstBuf::frame.time = XMFLOAT4{ (float)(timer::frameBeginTime * .01) ,0,0,0 }; // Обновляем параметр времени
+	ConstBuf::frame.aspect = XMFLOAT4{ aspect,iaspect, 0, 0 }; // Обновляем соотношение сторон окна
+	ConstBuf::UpdateFrame(); // Обновляем константный буфер frame
 }
 
 #define PI 3.1415926535897932384626433832795f
@@ -915,17 +921,20 @@ namespace Camera
 
 	void Camera()
 	{
-		float t = timer::frameBeginTime*.001;
-		float angle = 70;
-		float a = 20;
-		XMVECTOR Eye = XMVectorSet(sin(t)*a, 0, cos(t)*a, 0.0f);
-		XMVECTOR At = XMVectorSet(0, 0, 0, 0.0f);
-		XMVECTOR Up = XMVectorSet(0, 1, 0, 0.0f);
+		float t = timer::frameBeginTime*.001; // Угол вращения камеры
+		float angle = 70; // Угол обзора камеры
+		float a = 20; // Расстояние камеры до точки, куда она направлена
 
+		XMVECTOR Eye = XMVectorSet(sin(t)*a, 0, cos(t)*a, 0.0f); // Позиция камеры
+		XMVECTOR At = XMVectorSet(0, 0, 0, 0.0f); // Точка, куда смотрит камера
+		XMVECTOR Up = XMVectorSet(0, 1, 0, 0.0f); // Вектор верха, чтобы уточнить, где для камеры находится верх
+
+		// Создаем матрицы world, view и projection и заносим их в константный буфер
 		ConstBuf::camera.world[0] = XMMatrixIdentity();
 		ConstBuf::camera.view[0] = XMMatrixTranspose(XMMatrixLookAtLH(Eye, At, Up));
 		ConstBuf::camera.proj[0] = XMMatrixTranspose(XMMatrixPerspectiveFovLH(DegreesToRadians(angle), iaspect, 0.01f, 100.0f));
 
+		// Обновляем константный буфер камеры и отправляем в шейдера
 		ConstBuf::UpdateCamera();
 		ConstBuf::ConstToVertex(3);
 		ConstBuf::ConstToPixel(3);
@@ -934,18 +943,22 @@ namespace Camera
 
 void mainLoop()
 {
-	frameConst();
+	frameConst(); // Обновляем константный буфер frame
 
-	InputAssembler::IA(InputAssembler::topology::triList);
-	Blend::Blending(Blend::blendmode::alpha, Blend::blendop::add);
+	InputAssembler::IA(InputAssembler::topology::triList); // Выбираем треугольную топологию сетки
+	Blend::Blending(Blend::blendmode::alpha, Blend::blendop::add); // Выбираем режимы смешивания: alpha (текстуры имеют прозрачность) и add (цвета накладываются)
 
-	Textures::RenderTarget(0, 0);
-	Draw::Clear({ 0.15, 0.15, 0.15, 0 });
-	Draw::ClearDepth();
-	Depth::Depth(Depth::depthmode::on);
-	Rasterizer::Cull(Rasterizer::cullmode::wireframe);
+	Textures::RenderTarget(0, 0); // Выбираем текстуру, в которую будем рисовать
+	Draw::Clear({ 0.15, 0.15, 0.15, 0 }); // Очищаем цвета на текстуре
+	Draw::ClearDepth(); // Очищаем глубину на текстуре
+	Depth::Depth(Depth::depthmode::on); // Включаем глубину
+	Rasterizer::Cull(Rasterizer::cullmode::wireframe); // Выбираем режим отрисовки wireframe (отрисовываются рёбра между вершинами)
+
+	// Выбираем вершинный и пиксельный шейдера под индексами 0
 	Shaders::vShader(0);
 	Shaders::pShader(0);
+
+	// Отправляем константный буфер 4 в вершинный и пиксельный шейдера
 	ConstBuf::ConstToVertex(4);
 	ConstBuf::ConstToPixel(4);
 
