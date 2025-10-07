@@ -46,6 +46,7 @@ namespace timer
 	double frameRenderingDuration = 0.0;
 	int timeCursor = 0;
 
+	// Функция начала отсчета, используется один раз
 	void StartCounter()
 	{
 		LARGE_INTEGER li;
@@ -56,6 +57,7 @@ namespace timer
 		counterStart = li.QuadPart;
 	}
 
+	// Функция, возвращающая прошедшее время с начала отсчета
 	double GetCounter()
 	{
 		LARGE_INTEGER li;
@@ -65,10 +67,12 @@ namespace timer
 
 }
 
+// Иницализация интерфейсов для девайса, контекста и поверхности вывода
 ID3D11Device* device = NULL;
 ID3D11DeviceContext* context = NULL;
 IDXGISwapChain* swapChain = NULL;
 
+// Переменные для ширины, высоты и соотношения сторон окна
 int width;
 int height;
 float aspect;
@@ -83,10 +87,11 @@ struct rect {
 namespace Rasterizer
 {
 
-	enum class cullmode { off, front, back, wireframe };
+	enum class cullmode { off, front, back, wireframe }; // enum режимов отрисовки
 
 	ID3D11RasterizerState* rasterState[4];
-
+	
+	// Выбор режима отрисовки
 	void Cull(cullmode mode)
 	{
 		context->RSSetState(rasterState[(int)mode]);
@@ -135,11 +140,11 @@ namespace Textures
 #define max_tex 255
 #define mainRTIndex 0
 
-	enum tType { flat, cube };
+	enum tType { flat, cube }; // enum типов текстуры
 	
 
 	DXGI_FORMAT dxTFormat[4] = { DXGI_FORMAT_R8G8B8A8_UNORM ,DXGI_FORMAT_R8G8B8A8_SNORM ,DXGI_FORMAT_R16G16B16A16_FLOAT ,DXGI_FORMAT_R32G32B32A32_FLOAT };
-	enum tFormat { u8, s8, s16, s32 };
+	enum tFormat { u8, s8, s16, s32 }; // enum форматов текстуры
 	D3D11_TEXTURE2D_DESC tdesc;
 	D3D11_SHADER_RESOURCE_VIEW_DESC svDesc;
 	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
@@ -147,6 +152,7 @@ namespace Textures
 
 	ID3D11RenderTargetView* mrtView[8];
 
+	// Структура описания текстуры
 	typedef struct {
 
 		ID3D11Texture2D* pTexture;
@@ -164,11 +170,12 @@ namespace Textures
 		bool depth;
 
 	} textureDesc;
+	
+	textureDesc Texture[max_tex]; // Массив текстур
 
-	textureDesc Texture[max_tex];
+	byte currentRT = 0; // Текстура, выбранная в качестве render target, то есть та текстура, куда будет отрисовываться рендер
 
-	byte currentRT = 0;
-
+	// Создание описания текстуры
 	void CreateTex(int i)
 	{
 		auto cTex = Texture[i];
@@ -195,6 +202,7 @@ namespace Textures
 
 	}
 
+	// Создание ресурса шейдеров для текстуры
 	void ShaderRes(int i)
 	{
 		svDesc.Format = tdesc.Format;
@@ -216,6 +224,7 @@ namespace Textures
 		HRESULT hr = device->CreateShaderResourceView(Texture[i].pTexture, &svDesc, &Texture[i].TextureResView);
 	}
 
+	// Создание рендер таргетов для мип мапов текстуры
 	void rtView(int i)
 	{
 		renderTargetViewDesc.Format = tdesc.Format;
@@ -244,6 +253,7 @@ namespace Textures
 		}
 	}
 
+	// Создание глубины для текстуры
 	void Depth(int i)
 	{
 		auto cTex = Texture[i];
@@ -273,6 +283,7 @@ namespace Textures
 		}
 	}
 
+	// Создание ресурса шейдеров для глубины
 	void shaderResDepth(int i)
 	{
 		svDesc.Format = DXGI_FORMAT_R32_FLOAT;
@@ -283,6 +294,7 @@ namespace Textures
 		HRESULT hr = device->CreateShaderResourceView(Texture[i].pDepth, &svDesc, &Texture[i].DepthResView);
 	}
 
+	// Функция создания текстуры
 	void Create(int i, tType type, tFormat format, XMFLOAT2 size, bool mipMaps, bool depth)
 	{
 		ZeroMemory(&tdesc, sizeof(tdesc));
@@ -317,6 +329,7 @@ namespace Textures
 		context->PSSetShaderResources(0, 128, null);
 	}
 
+	// Установка цели рендеринга
 	void SetViewport(int texId, byte level = 0)
 	{
 		XMFLOAT2 size = Textures::Texture[texId].size;
@@ -360,12 +373,13 @@ namespace Textures
 		}
 	}
 
+	// Создает мип мапы текущей текстуры, установленной в качестве render target
 	void CreateMipMap()
 	{
 		context->GenerateMips(Texture[currentRT].TextureResView);
 	}
 
-
+	// Устанавливает render target
 	void RenderTarget(int target, unsigned int level = 0)
 	{
 		currentRT = (int)target;
@@ -390,6 +404,7 @@ namespace Textures
 
 namespace Shaders {
 
+	// Структуры вершинного и пиксельного шейдеров
 	typedef struct {
 		ID3D11VertexShader* pShader;
 		ID3DBlob* pBlob;
@@ -400,6 +415,7 @@ namespace Shaders {
 		ID3DBlob* pBlob;
 	} PixelShader;
 
+	// Массивы вершинных и пиксельных шейдеров
 	VertexShader VS[255];
 	PixelShader PS[255];
 
@@ -437,6 +453,7 @@ namespace Shaders {
 		}
 	}
 
+	// Компилирует вершинный шейдер из файла
 	void CreateVS(int i, LPCWSTR name)
 	{
 		HRESULT hr;
@@ -451,12 +468,13 @@ namespace Shaders {
 
 	}
 
+	// Компилирует пиксельный шейдер из файла
 	void CreatePS(int i, LPCWSTR name)
 	{
 		HRESULT hr;
 
 		hr = D3DCompileFromFile(name, NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PS", "ps_4_1", NULL, NULL, &PS[i].pBlob, &pErrorBlob);
-		CompilerLog(name, hr, "vertex shader compiled: ");
+		CompilerLog(name, hr, "pixel shader compiled: ");
 
 		if (hr == S_OK)
 		{
@@ -467,15 +485,18 @@ namespace Shaders {
 
 	void Init()
 	{
+		// Компиляция шейдеров
 		CreateVS(0, nameToPatchLPCWSTR("VS.h"));
 		CreatePS(0, nameToPatchLPCWSTR("PS.h"));
 	}
 
+	// Устанавливает вершинный шейдер
 	void vShader(unsigned int n)
 	{
 		context->VSSetShader(VS[n].pShader, NULL, 0);
 	}
 
+	// Устанавливает пиксельный шейдер
 	void pShader(unsigned int n)
 	{
 		context->PSSetShader(PS[n].pShader, NULL, 0);
@@ -552,9 +573,12 @@ namespace Sampler
 
 namespace ConstBuf
 {
-	ID3D11Buffer* buffer[6];
+	ID3D11Buffer* buffer[6]; // Массив константных буферов
 
 #define constCount 32
+
+	// Структуры для константных буферов //
+	///////////////////////////////////////
 
 	//b0 - use "params" label in shader
 	float drawerV[constCount];//update per draw call
@@ -584,6 +608,8 @@ namespace ConstBuf
 	//b5
 	XMFLOAT4 global[constCount];//update once on start
 
+	///////////////////////////////////////
+
 	int roundUp(int n, int r)
 	{
 		return 	n - (n % r) + r;
@@ -594,7 +620,7 @@ namespace ConstBuf
 		D3D11_BUFFER_DESC bd;
 		ZeroMemory(&bd, sizeof(bd));
 		bd.Usage = D3D11_USAGE_DEFAULT;
-		bd.ByteWidth = roundUp(size, 16);
+		bd.ByteWidth = roundUp(size, 16); // Округляем вверх до ближайшего числа, кратного 16
 		bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		bd.CPUAccessFlags = 0;
 		bd.StructureByteStride = 16;
@@ -836,15 +862,16 @@ namespace InputAssembler
 			ttype = D3D_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_LINESTRIP;
 		}
 
-		context->IASetPrimitiveTopology(ttype);
-		context->IASetInputLayout(NULL);
-		context->IASetVertexBuffers(0, 0, NULL, NULL, NULL);
+		context->IASetPrimitiveTopology(ttype); // Устанавливаем топологию (по умолчанию треугольники)
+		context->IASetInputLayout(NULL); // Задаем входные данные в вершинный шейдер
+		context->IASetVertexBuffers(0, 0, NULL, NULL, NULL); // Задаем вершинные буферы
 	}
 
 }
 
 void Dx11Init()
 {
+	// Получаем прямоугольник окна и его параметры
 	RECT rect;
 	GetClientRect(hWnd, &rect);
 	width = rect.right - rect.left;
@@ -852,6 +879,7 @@ void Dx11Init()
 	aspect = float(height) / float(width);
 	iaspect = float(width) / float(height);
 
+	// Инициализируем все составляющие
 	Device::Init();
 	Rasterizer::Init();
 	Depth::Init();
@@ -861,7 +889,7 @@ void Dx11Init()
 	Shaders::Init();
 	
 	//main RT
-	Textures::Create(0, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(width, height), false, true);
+	Textures::Create(0, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(width, height), false, true); // Создаём основную текстуру, куда будем рендерить изображение
 }
 
 
@@ -875,11 +903,13 @@ struct color4 {
 namespace Draw
 {
 
+	// Очищает цвет текущей текстуры, выбранной в качестве render target
 	void Clear(color4 color)
 	{
 		context->ClearRenderTargetView(Textures::Texture[Textures::currentRT].RenderTargetView[0][0], XMVECTORF32{ color.r,color.g,color.b,color.a });
 	}
 
+	// Очищает глубину текущей текстуры, выбранной в качестве render target
 	void ClearDepth()
 	{
 		context->ClearDepthStencilView(Textures::Texture[Textures::currentRT].DepthStencilView[0], D3D11_CLEAR_DEPTH, 1.0f, 0);
@@ -895,6 +925,7 @@ namespace Draw
 		context->DrawInstanced(quadCount * 6, instances, 0, 0); // Вызываем отрисовку
 	}
 
+	// Выводит текстуру на поверхность окна
 	void Present()
 	{
 		Textures::UnbindAll();
