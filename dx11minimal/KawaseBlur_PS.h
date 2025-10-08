@@ -1,6 +1,12 @@
 Texture2D inputTexture : register(t1);
 SamplerState samplerState : register(s1);
 
+cbuffer frame : register(b4)
+{
+    float4 time;
+    float4 aspect;
+};
+
 struct VS_OUTPUT
 {
     float4 pos : SV_POSITION;
@@ -30,7 +36,7 @@ float4 PS(VS_OUTPUT input) : SV_Target
         float offset = offsetScale * (i + 0.5);
         for (int j = 0; j < 4; j++)
         {
-            float2 uv = input.uv + directions[j] * offset;
+            float2 uv = input.uv + directions[j] * float2(aspect.x, 1) * offset;
             color += inputTexture.Sample(samplerState, uv);
         }
     }
