@@ -95,10 +95,6 @@ VS_OUTPUT VS(uint vID : SV_VertexID)
 
     float3 normal = (normal1 + normal2) / 2;
 
-    float3 tangent = normalize(pos1 - pos0);
-    float3 binormal = normalize(pos2 - pos0);
-    float3 normal = -normalize(cross(tangent, binormal));
-
     output.pos = mul(float4(pos0.xyz, 1), mul(view[0], proj[0]));
     output.vpos = mul(output.pos, view[0]);
     output.wpos = float4(pos0.xyz, 1);
