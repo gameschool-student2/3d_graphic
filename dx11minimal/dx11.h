@@ -507,7 +507,6 @@ namespace Shaders {
 	typedef struct {
 		ID3D11PixelShader* pShader;
 		ID3DBlob* pBlob;
-		ID3D11InputLayout* pLayout; // Çהוסü עמ זו סאלמו
 	} PixelShader;
 
 	VertexShader VS[255];
